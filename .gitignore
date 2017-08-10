@@ -1,0 +1,9 @@
+# Python temporary files and folder
+__pycache__/
+*.py[cod]
+
+# Ignore folder for virtualenviroment
+venv/
+
+# IDEA settings
+.idea/
