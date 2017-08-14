@@ -44,9 +44,10 @@ class User:
         self.logged_in = True
         print("User @%s is logged in" % self.name)
 
+    @login_required
     def logout(self):
         for name in self.chats:
-            self.send_to(name, "User @%s exited from chat" % self.name)
+            self.send_to(self.chats[name], "User @%s exited from chat" % self.name)
         self.logged_in = False
         print("@%s is logged out" % self.name)
 
