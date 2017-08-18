@@ -2,8 +2,11 @@ import socket
 import select
 import re
 import traceback
+from logging import getLogger, config as logging_config, INFO
 
+from config.log import LOGGING, LOGGING_PATH
 from user import User, UserAlreadyLoggedInException, NoSuchUserException
+
 
 
 class NoSuchCmdException(Exception):
@@ -129,13 +132,14 @@ def parse_data(data):
 
 
 def server(host='127.0.0.1', port=9090):
+    _logger = getLogger('server')
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind((host, port))
     server_socket.listen(10)
 
     SOCKETS.append(server_socket)
-    print("Starting server on %s:%s" % (host, port))
+    _logger.info("Starting server on {}:{}".format(host, port))
 
     while True:
 
@@ -146,7 +150,7 @@ def server(host='127.0.0.1', port=9090):
             if sock == server_socket:
                 sockfd, addr = server_socket.accept()
                 SOCKETS.append(sockfd)
-                print("Client (%s, %s) connected" % (addr[0], addr[1]))
+                _logger.info("Client (%s, %s) connected", (addr[0], addr[1]))
 
             # a message from a client, not a new connection
             else:
@@ -165,9 +169,13 @@ def server(host='127.0.0.1', port=9090):
                         else:
                             raise Exception('WTF?')
                 except Exception:
-                    print(traceback.format_exc())
+                    _logger.error(traceback.format_exc())
                     continue
 
 
 if __name__ == '__main__':
+    import os
+    if not os.path.exists(LOGGING_PATH):
+        os.makedirs(LOGGING_PATH)
+    logging_config.dictConfig(LOGGING)
     server()

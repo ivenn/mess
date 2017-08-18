@@ -7,3 +7,7 @@ venv/
 
 # IDEA settings
 .idea/
+
+# Logging folder
+logs/
+
