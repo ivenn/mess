@@ -8,6 +8,9 @@ venv/
 # IDEA settings
 .idea/
 
+# SQLite files
+*.db
+
 # Logging folder
 logs/
 
