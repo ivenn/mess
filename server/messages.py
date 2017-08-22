@@ -1,3 +1,5 @@
+import logging
+
 """
 All messages should start with 3 letter command name
 
@@ -49,8 +51,14 @@ ERROR_CMDS = [CMD_ERROR, ]
 
 TERM_SEQUENCE = '\n\n'
 
+log = logging.getLogger('messages')
+
 
 class ParseError(Exception):
+    pass
+
+
+class UnknownCommand(Exception):
     pass
 
 
@@ -58,6 +66,9 @@ class Message:
 
     def __init__(self, transaction_id=None):
         self.tr_id = transaction_id
+
+    def as_bytes(self):
+        raise NotImplementedError()
 
 
 class NormalMessage(Message):
@@ -69,6 +80,11 @@ class NormalMessage(Message):
 
     def __repr__(self):
         return "NormalMessage(cmd: %s, params: %s)" % (self.cmd, self.params)
+
+    def as_bytes(self):
+        msg = "{cmd} {params}\n".format(cmd=self.cmd, params=' '.join(self.params))
+        msg = msg.encode('utf-8')
+        return msg
 
 
 class PayloadMessage(Message):
@@ -82,10 +98,15 @@ class PayloadMessage(Message):
 
 class ErrorMessage(Message):
 
-    def __init__(self, transaction_id, cmd, err_code):
+    def __init__(self, transaction_id=None, cmd=CMD_ERROR, err_code='ERR_CODE'):
         self.cmd = cmd
-        self.code = err_code
+        self.code = err_code  # temporarily used for error description
         super().__init__(transaction_id)
+
+    def as_bytes(self):
+        msg = "{cmd} {code}\n".format(cmd=self.cmd, code=self.code)
+        msg = msg.encode('utf-8')
+        return msg
 
 
 def parse_msg(data):
@@ -108,8 +129,6 @@ def parse_payload_msg(data):
     params = srv_data[2:-1]
     payload_len = srv_data[-1]
 
-    print(len(payload) == payload_len)
-
     return PayloadMessage(cmd, params, payload, tr_id)
 
 
@@ -129,14 +148,17 @@ def parse_data(data):
 
     if cmd in NORMAL_CMDS:
         msg = parse_msg(data)
-        print(msg)
+        log.info(msg)
         return msg
     elif cmd in PAYLOAD_CMDS:
         return parse_payload_msg(data)
     elif cmd in ERROR_CMDS:
         return parse_err_msg(data)
     else:
-        raise ParseError(data, cmd)
+        if cmd not in NORMAL_CMDS + PAYLOAD_CMDS + ERROR_CMDS:
+            raise UnknownCommand(cmd)
+        else:
+            raise ParseError(cmd, data)
 
 
 if __name__ == '__main__':

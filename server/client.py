@@ -1,7 +1,11 @@
+import logging
 from functools import wraps
 
 from server.models import session
 from server.models.user import User, UserAlreadyLoggedInException, InvalidUserCredentials, ONLINE_USERS
+from server.messages import Message, NormalMessage
+
+log = logging.getLogger('client')
 
 
 class ClientIsNotLoggedInException(Exception):
@@ -52,15 +56,19 @@ class Client:
             raise InvalidUserCredentials()
 
     def send(self, msg):
+        """
+        @param msg: Message subclass instance or bytes or string
+        """
         if type(msg) is str:
             msg = msg.encode('utf-8')
-        self.conn.send(msg + b'\n')
-        print("@%s get message '%s'" % (self.name, msg))
+        if isinstance(msg, Message):
+            msg = msg.as_bytes()
+        self.conn.send(msg)
+        log.info("{client} <<< {msg}".format(client=self, msg=msg))
 
     def status(self):
-        print("%s requested status info" % self)
         if self.logged_in():
-            return self.send("You are logged in as @%s, " % self.name)
+            return self.send("You are logged in")
         else:
             return self.send("You are not logged in!")
 

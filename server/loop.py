@@ -1,12 +1,15 @@
 import select
 import socket
 import traceback
+import logging
 
 from server.client import Client
-from server.messages import parse_data, ParseError, NormalMessage, PayloadMessage, ErrorMessage
+from server.messages import parse_data, ParseError, NormalMessage, PayloadMessage, ErrorMessage, UnknownCommand
 from server.messages import CMD_LOGIN, CMD_LOGOUT
 from server.models.user import InvalidUserCredentials
 
+
+log = logging.getLogger('loop')
 
 # dict {socket: <Client> instance}
 CLIENTS = {}
@@ -33,7 +36,7 @@ def run_server(host='127.0.0.1', port=9090):
     server_socket.listen(10)
 
     CLIENTS[server_socket] = None
-    print("Starting server on %s:%s" % (host, port))
+    log.info("Starting server on {host}:{port}".format(host=host, port=port))
 
     while True:
 
@@ -44,26 +47,24 @@ def run_server(host='127.0.0.1', port=9090):
             if sock == server_socket:
                 sockfd, addr = server_socket.accept()
                 CLIENTS[sockfd] = Client(sockfd)
-                print("Client (%s, %s) connected" % (addr[0], addr[1]))
+                log.info("Client ({host}:{port}) connected".format(host=addr[0], port=addr[1]))
             # a message from a client, not a new connection
             else:
+                client = None
                 try:
                     data = sock.recv(4096)
+                    client = CLIENTS[sock]
                     if data:
-                        try:
-                            msg = parse_data(data)
-                        except ParseError as e:
-                            sock.send(b'Unable to parse: ' + repr(data).encode('utf-8') + b'\n')
-                            raise e
+                        msg = parse_data(data)
                         handle_message(CLIENTS[sock], msg)
                     else:
                         if sock in CLIENTS:
-                            print('Deleting %s from connections...' % sock)
+                            log.warning('Deleting {socket} from connections...'.format(socket=sock))
                             del CLIENTS[sock]
                         else:
                             raise Exception('WTF?')
                 except Exception as e:
-                    print(traceback.format_exc())
-                    sock.send(b'Server exception: ' + repr(e).encode('utf-8') + b'\n')
+                    log.error(traceback.format_exc())
+                    client.send(ErrorMessage(err_code=repr(repr(e).encode('utf-8'))))
                     continue
 
