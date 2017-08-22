@@ -2,6 +2,7 @@ import sys
 import socket
 import select
 
+
 def client(user, server, port):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:

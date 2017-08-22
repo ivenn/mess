@@ -1,0 +1,5 @@
+cffi==1.10.0
+pycparser==2.18
+six==1.10.0
+SQLAlchemy==1.1.13
+SQLAlchemy-Utils==0.32.14
