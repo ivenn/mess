@@ -5,7 +5,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'file_formatter': {
-            'format': '%(asctime)s [%(levelname)4s] [%(threadName)s] %(module)s %(message)s'
+            'format': '%(asctime)s [%(levelname)4s] [%(threadName)s] [%(module)12s] %(message)s'
         },
         'console_formater': {
             'format': '%(levelname)s %(message)s'
