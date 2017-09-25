@@ -1,12 +1,10 @@
-import select
+import selectors
 import socket
 import traceback
 import logging
 
 from server.client import Client
-from server.messages import parse_data, ParseError, NormalMessage, PayloadMessage, ErrorMessage, UnknownCommand
-from server.messages import CMD_LOGIN, CMD_LOGOUT
-from server.models.user import InvalidUserCredentials
+from server.messages import ErrorMessage
 
 
 log = logging.getLogger('loop')
@@ -19,60 +17,139 @@ class MessServer:
         self.port = port
         self.clients = {}  # dict {socket: <Client> instance}
         self.socket = None
+        self._running = False
+        self.selector = selectors.DefaultSelector()
+
+    def register_client(self, conn):
+        """
+        Register new client
+        :param conn: connection to register as a client
+        :return: None
+        """
+        log.info("Register new client: {fileno}".format(fileno=conn.fileno()))
+        self.clients[conn.fileno()] = Client(conn, self)
+
+    def delete_client(self, conn):
+        """
+        Delete client from
+        :param conn: connection to delete from clients
+        :return: None
+        """
+        log.info("Delete client: {fileno}".format(fileno=conn.fileno()))
+        if self.clients[conn.fileno()].logged_in:
+            self.clients[conn.fileno()].logout()
+        del self.clients[conn.fileno()]
+
+    def on_accept(self, sock, mask):
+        """
+        Callback for new connections
+
+        :param sock: socket to accept and register as client
+        :param mask
+        :return: None
+        """
+        new_connection, addr = self.socket.accept()
+        log.info('accept({})'.format(addr))
+        new_connection.setblocking(False)
+        self.selector.register(fileobj=new_connection,
+                               events=selectors.EVENT_READ,
+                               data=self.on_read)
+        self.register_client(new_connection)
+
+    def on_read(self, conn, mask):
+        """
+        Callback for read events
+        :param conn: connection to read from
+        :param mask:
+        :return: None
+        """
+
+        client = self.clients[conn.fileno()]
+        try:
+            data = conn.recv(1024)
+            if data:
+                log.info('got data from {}: {!r}'.format(conn.getpeername(), data))
+                client.recv(data)
+            else:
+                self.on_close(conn)
+        except ConnectionResetError:
+            self.on_close(conn)
+        except Exception as e:
+            log.error(traceback.format_exc())
+            client.send(ErrorMessage(err_code=repr(repr(e).encode('utf-8'))))
+
+    def on_error(self, conn):
+        """
+        Handle error on connection
+        :param conn:
+        :return: None
+        """
+        pass
+
+    def on_close(self, conn):
+        """
+        Close connection and delete client
+        :param conn: connection to close
+        :return: None
+        """
+        log.info('closing connection to {0}'.format(conn.getpeername()))
+        self.delete_client(conn)
+        self.selector.unregister(conn)
+        conn.close()
 
     def setup(self):
+        """
+        Setup server, init server socket
+        :return: None
+        """
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.bind((self.host, self.port))
         self.socket.listen(10)
 
-        self.clients[self.socket] = None
-        log.info("Starting server on {host}:{port}".format(host=self.host, port=self.port))
-
-    def handle_message(self, client, msg):
-        if isinstance(msg, NormalMessage):
-            if msg.cmd == CMD_LOGIN:
-                if len(msg.params) != 2:
-                    raise InvalidUserCredentials()
-                client.login_as(msg.params[0], msg.params[1])
-            if msg.cmd == CMD_LOGOUT:
-                client.logout()
-        elif isinstance(msg, PayloadMessage):
-            pass
-        elif isinstance(msg, ErrorMessage):
-            pass
+        self.clients[self.socket.fileno()] = "SERVER"
+        self.selector.register(fileobj=self.socket,
+                               events=selectors.EVENT_READ,
+                               data=self.on_accept)
+        self._running = True
+        log.info("Server({selector_impl}) listen on {host}:{port}".format(selector_impl=type(self.selector),
+                                                                          host=self.host,
+                                                                          port=self.port))
 
     def run(self):
+        """
+        Infinite loop to handle incoming events
+        :return: None
+        """
         self.setup()
-        while True:
 
-            readl, writel, errl = select.select(self.clients.keys(), [], [], 0)
+        while self._running:
+            events = self.selector.select()
 
-            for sock in readl:
-                # a new connection request received
-                if sock == self.socket:
-                    sockfd, addr = self.socket.accept()
-                    self.clients[sockfd] = Client(sockfd)
-                    log.info("Client ({host}:{port}) connected".format(host=addr[0], port=addr[1]))
-                # a message from a client, not a new connection
-                else:
-                    client = None
-                    try:
-                        data = sock.recv(4096)
-                        client = self.clients[sock]
-                        if data:
-                            msg = parse_data(data)
-                            self.handle_message(self.clients[sock], msg)
-                        else:
-                            if sock in self.clients:
-                                log.warning('Deleting {socket} from connections...'.format(socket=sock))
-                                del self.clients[sock]
-                            else:
-                                raise Exception('WTF?')
-                    except Exception as e:
-                        log.error(traceback.format_exc())
-                        client.send(ErrorMessage(err_code=repr(repr(e).encode('utf-8'))))
-                        continue
+            for key, mask in events:
+                try:
+                    handler = key.data
+                    handler(key.fileobj, mask)
+                except Exception:
+                    log.error(traceback.format_exc())
+                    continue
+
+    def stat(self):
+        """
+        Return server client statistics
+        :return: string from clients dictionary
+        """
+        return str(self.clients)
 
     def stop(self):
-        pass
+        """
+        Stop server
+        :return: None
+        """
+        for client in self.clients:
+            client.send(ErrorMessage(err_code=repr("Server is stopping...".encode('utf-8'))))
+            client_conn = client.conn
+            self.delete_client(client.conn)
+            self.on_close(client_conn)
+        self.selector.close()
+        self._running = False

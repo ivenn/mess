@@ -70,5 +70,6 @@ class User(Base):
     def logout(self):
         log.info("{user} logged out from {client}".format(user=self, client=self.client))
         del ONLINE_USERS[self.name]
-        self.client = None
         self.state = STATE_OFFLINE
+        self.client = None
+
