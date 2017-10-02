@@ -1,5 +1,6 @@
 import logging
 
+
 """
 All messages should start with 3 letter command name
 
@@ -25,19 +26,29 @@ All messages should start with 3 letter command name
 CMD_LOGIN = 'USR'
 CMD_LOGOUT = 'OUT'
 CMD_ADD_CONTACT = 'ADD'
-CMD_CONTACT_LIST = 'LST'
+CMD_FRIENDS = 'FRD'
 CMD_CHANGE_STATUS = 'CHG'
 CMD_MSG_ACK = 'ACK'
 
+CMD_INFO = 'INF'
 CMD_MESSAGE = 'MSG'
 
 CMD_ERROR = 'ERR'
 
 CMD_SERVICE = 'SRV'
 
-NORMAL_CMDS = [CMD_LOGIN, CMD_LOGOUT, CMD_ADD_CONTACT, CMD_CONTACT_LIST, CMD_CHANGE_STATUS, CMD_MSG_ACK]
-PAYLOAD_CMDS = [CMD_MESSAGE, ]
+NORMAL_CMDS = [CMD_LOGIN,
+               CMD_LOGOUT,
+               CMD_ADD_CONTACT,
+               CMD_FRIENDS,
+               CMD_CHANGE_STATUS,
+               CMD_MSG_ACK, ]
+
+PAYLOAD_CMDS = [CMD_MESSAGE,
+                CMD_INFO, ]
+
 ERROR_CMDS = [CMD_ERROR, ]
+
 SERVICE_CMDS = [CMD_SERVICE, ]
 
 CMDS = NORMAL_CMDS + PAYLOAD_CMDS + ERROR_CMDS + SERVICE_CMDS
@@ -86,9 +97,10 @@ class NormalMessage(Message):
         return "NormalMessage(cmd: %s, params: %s)" % (self.cmd, self.params)
 
     def as_bytes(self):
-        msg = "{cmd} {params}{term_seq}".format(cmd=self.cmd,
-                                                params=' '.join(self.params),
-                                                term_seq=self.TERM_SEQUENCE_STR)
+        msg_template = "{cmd} {params}{term_seq}\n"
+        msg = msg_template.format(cmd=self.cmd,
+                                  params=' '.join(self.params),
+                                  term_seq=self.TERM_SEQUENCE_STR)
         msg = msg.encode('utf-8')
         return msg
 
@@ -106,8 +118,8 @@ class NormalMessage(Message):
 class PayloadMessage(Message):
     """
     Template:
-    CMD TD_ID PARAM_1 PARAM_2 PARAM_N PAYLOAD_SIZE<SPLIT_SEQUENCE>
-    <---------------   PAYLOAD   --------------->  <TERM_SEQUENCE>
+    CMD TR_ID PARAM_1 PARAM_2 PARAM_N PAYLOAD_SIZE<SPLIT_SEQUENCE>
+    <---------------   PAYLOAD   -----------------><TERM_SEQUENCE>
     """
 
     def __init__(self, cmd, params, payload, transaction_id=None):
@@ -117,17 +129,30 @@ class PayloadMessage(Message):
         super().__init__(transaction_id)
 
     def as_bytes(self):
-        pass
+        msg_template = "{cmd} {params} {payload_size}{split_seq}{payload}{term_seq}\n"
+        msg = msg_template.format(cmd=self.cmd,
+                                  params=' '.join(self.params),
+                                  payload_size=len(self.payload),
+                                  split_seq=self.SPLIT_SEQUENCE_STR,
+                                  payload=self.payload,
+                                  term_seq=self.TERM_SEQUENCE_STR)
+        msg = msg.encode('utf-8')
+        return msg
 
     @staticmethod
     def from_string(str_msg):
-        pass
+        service_part, payload = str_msg.split(Message.SPLIT_SEQUENCE_STR)
+        service_part_splitted = service_part.split(Message.SEPARATOR_SYMBOL_STR)
+        cmd = service_part_splitted[0]
+        params = service_part_splitted[1:-1]
+        payload_size = service_part_splitted[-1]
+        return PayloadMessage(cmd, params, payload)
 
 
 class ErrorMessage(Message):
     """
     Template:
-    CMD TD_ID ERR_CODE<TERM_SEQUENCE>
+    CMD TR_ID ERR_CODE<TERM_SEQUENCE>
     """
 
     def __init__(self, transaction_id=None, cmd=CMD_ERROR, err_code='ERR_CODE'):
@@ -154,7 +179,7 @@ class ErrorMessage(Message):
 class ServiceMessage(Message):
     """
     Template:
-    CMD TD_ID<TERM_SEQUENCE>
+    CMD TR_ID<TERM_SEQUENCE>
     """
 
     def __init__(self, transaction_id=None, cmd=CMD_ERROR):
@@ -162,7 +187,7 @@ class ServiceMessage(Message):
         super().__init__(transaction_id)
 
     def __repr__(self):
-        return "ServiceMessage(cmd: %s)" % self.cmd
+        return "ServiceMessage(cmd: %s)" % (self.cmd)
 
     def as_bytes(self):
         msg = "{cmd}{term_seq}".format(cmd=self.cmd,
@@ -236,28 +261,7 @@ class DataParser:
                 raise UnknownCommand(cmd)
             else:
                 raise ParseError(cmd, data)
-        log.info(msg)
         return msg
-
-
-class MessageDispatcher:
-
-    def __init__(self):
-        pass
-
-    def dispatch(self, client, msg):
-        """
-        Dispatch messages to client methods
-        """
-        if isinstance(msg, NormalMessage):
-            client.handle_normal_msg(msg)
-        elif isinstance(msg, PayloadMessage):
-            pass
-        elif isinstance(msg, ErrorMessage):
-            pass
-        elif isinstance(msg, ServiceMessage):
-            if msg.cmd == CMD_SERVICE:
-                return client.send(client.server.stat())
 
 
 if __name__ == '__main__':

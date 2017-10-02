@@ -6,8 +6,10 @@ Base = declarative_base()
 session = sessionmaker()
 
 
-def init_db():
-    engine = create_engine('sqlite:///../mess.db')
+def init_db(db='sqlite:///../mess.db', enable_logging=False):
+    engine = create_engine(db,
+                           echo=enable_logging  # enables sqlalchemy logging
+                           )
     Base.metadata.bind = engine
     session.configure(bind=engine)
     Base.metadata.create_all(engine)
