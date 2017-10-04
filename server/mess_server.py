@@ -29,14 +29,14 @@ class MessServer:
         log.info("Register new client: {fileno}".format(fileno=conn.fileno()))
         self.clients[conn.fileno()] = Client(conn, self)
 
-    def delete_client(self, conn):
+    def unregister_client(self, conn):
         """
         Delete client from
         :param conn: connection to delete from clients
         :return: None
         """
-        log.info("Delete client: {fileno}".format(fileno=conn.fileno()))
-        if self.clients[conn.fileno()].logged_in:
+        log.info("Unregister client: {fileno}".format(fileno=conn.fileno()))
+        if self.clients[conn.fileno()].user:
             self.clients[conn.fileno()].logout()
         del self.clients[conn.fileno()]
 
@@ -63,7 +63,6 @@ class MessServer:
         :param mask:
         :return: None
         """
-
         client = self.clients[conn.fileno()]
         try:
             data = conn.recv(1024)
@@ -93,7 +92,7 @@ class MessServer:
         :return: None
         """
         log.info('closing connection to {0}'.format(conn.getpeername()))
-        self.delete_client(conn)
+        self.unregister_client(conn)
         self.selector.unregister(conn)
         conn.close()
 
@@ -149,7 +148,8 @@ class MessServer:
         for client in self.clients:
             client.send(ErrorMessage(err_code=repr("Server is stopping...".encode('utf-8'))))
             client_conn = client.conn
-            self.delete_client(client.conn)
+            self.unregister_client(client.conn)
             self.on_close(client_conn)
         self.selector.close()
         self._running = False
+

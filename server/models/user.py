@@ -1,34 +1,20 @@
 import logging
 
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, UniqueConstraint, select
+from sqlalchemy.orm import relationship
+
 from server.models import Base
-from server.messages import NormalMessage, CMD_CHANGE_STATUS
-
-
-class InvalidUserCredentials(Exception):
-    pass
-
-
-class NoSuchUserOnline(Exception):
-    pass
-
-
-class UserAlreadyLoggedInException(Exception):
-    pass
-
-
-class UserIsNotLoggedInException(Exception):
-    pass
 
 
 log = logging.getLogger('user')
 
 
-STATE_ONLINE = 'ONLINE'
-STATE_OFFLINE = 'OFFLINE'
-
-
-ONLINE_USERS = {}
+friendship = Table(
+    'friendships', Base.metadata,
+    Column('friend_a_id', Integer, ForeignKey('user.id'), primary_key=True),
+    Column('friend_b_id', Integer, ForeignKey('user.id'), primary_key=True),
+    UniqueConstraint('friend_a_id', 'friend_b_id', name='unique_friendship')
+)
 
 
 class User(Base):
@@ -36,40 +22,29 @@ class User(Base):
     __tablename__ = 'user'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(128), nullable=False)
+    name = Column(String(128), unique=True, nullable=False)
     password = Column(String(128), nullable=False)
+    friends = relationship('User',
+                           secondary=friendship,
+                           primaryjoin=id == friendship.c.friend_a_id,
+                           secondaryjoin=id == friendship.c.friend_b_id, )
 
     def __init__(self, name, password):
         self.name = name
         self.password = password
-        self._state = STATE_OFFLINE
-        self.client = None
 
     def __repr__(self):
         return "User(%s)" % self.name
 
-    @property
-    def state(self):
-        return self._state
 
-    @state.setter
-    def state(self, new_state):
-        self._state = new_state
-        for user in ONLINE_USERS.values():
-            user.client.send(NormalMessage(cmd=CMD_CHANGE_STATUS, params=[self.name, new_state]))
+# this relationship is viewonly and selects across the union of all friends
+friendship_union = select([friendship.c.friend_a_id,
+                           friendship.c.friend_b_id]).union(select([friendship.c.friend_b_id,
+                                                                    friendship.c.friend_a_id])).alias()
 
-    def login(self, password, client):
-        if self.password == password:
-            ONLINE_USERS[self.name] = self
-            self.client = client
-            self.state = STATE_ONLINE
-            log.info("{user} was logged in from {client}".format(user=self, client=client))
-        else:
-            raise InvalidUserCredentials()
 
-    def logout(self):
-        log.info("{user} logged out from {client}".format(user=self, client=self.client))
-        del ONLINE_USERS[self.name]
-        self.state = STATE_OFFLINE
-        self.client = None
-
+User.all_friends = relationship('User',
+                                secondary=friendship_union,
+                                primaryjoin=User.id == friendship_union.c.friend_a_id,
+                                secondaryjoin=User.id == friendship_union.c.friend_b_id,
+                                viewonly=True)
