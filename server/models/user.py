@@ -1,19 +1,20 @@
 import logging
 
-from sqlalchemy import Column, Integer, String, ForeignKey, Table, UniqueConstraint, select
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, UniqueConstraint, CheckConstraint, select
 from sqlalchemy.orm import relationship
 
 from server.models import Base
 
 
-log = logging.getLogger('user')
+log = logging.getLogger(__name__)
 
 
 friendship = Table(
     'friendships', Base.metadata,
     Column('friend_a_id', Integer, ForeignKey('user.id'), primary_key=True),
     Column('friend_b_id', Integer, ForeignKey('user.id'), primary_key=True),
-    UniqueConstraint('friend_a_id', 'friend_b_id', name='unique_friendship')
+    UniqueConstraint('friend_a_id', 'friend_b_id', name='unique_friendship'),
+    CheckConstraint('NOT(friend_a_id == friend_b_id)', name='check_self_friend')
 )
 
 
