@@ -4,9 +4,6 @@ from server.models.user import User
 from server.config import configure_logging
 
 
-def clean_db(db_session):
-    pass
-
 def fill_db(db_session):
 
     users = {}

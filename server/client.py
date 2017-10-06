@@ -2,6 +2,7 @@ import logging
 from functools import wraps
 
 from server.models import session
+from server.online import ONLINE_USERS
 from server.models.user import User
 from server.messages import DataBuffer, DataParser, Message
 from server.messages import CMD_CHANGE_STATUS, CMD_INFO
@@ -46,9 +47,6 @@ class ClientIsNotLoggedInException(Exception):
 
 class ClientIsAlreadyLoggedIn(Exception):
     pass
-
-
-ONLINE_USERS = {}
 
 CLIENT_OFFLINE = 'OFFLINE'
 
