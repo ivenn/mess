@@ -7,7 +7,7 @@ from server.client import Client
 from server.messages import ErrorMessage
 
 
-log = logging.getLogger('loop')
+log = logging.getLogger(__name__)
 
 
 class MessServer:
@@ -123,7 +123,11 @@ class MessServer:
         self.setup()
 
         while self._running:
-            events = self.selector.select()
+            try:
+                events = self.selector.select()
+            except KeyboardInterrupt:
+                self.stop()
+                return
 
             for key, mask in events:
                 try:
@@ -133,23 +137,15 @@ class MessServer:
                     log.error(traceback.format_exc())
                     continue
 
-    def stat(self):
-        """
-        Return server client statistics
-        :return: string from clients dictionary
-        """
-        return str(self.clients)
-
     def stop(self):
         """
         Stop server
         :return: None
         """
-        for client in self.clients:
-            client.send(ErrorMessage(err_code=repr("Server is stopping...".encode('utf-8'))))
+        log.warning("Server is stopping...")
+        for client in [c for c in self.clients.values() if isinstance(c, Client)]:
+            client.send(ErrorMessage(err_code=repr("Server is stopping".encode('utf-8'))))
             client_conn = client.conn
-            self.unregister_client(client.conn)
             self.on_close(client_conn)
         self.selector.close()
         self._running = False
-
