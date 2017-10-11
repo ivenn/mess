@@ -1,21 +1,27 @@
 import logging
 
-from sqlalchemy import Column, Integer, String, ForeignKey, Table, UniqueConstraint, CheckConstraint, select
+from sqlalchemy import Column, Integer, String, ForeignKey, UniqueConstraint, CheckConstraint, select
 from sqlalchemy.orm import relationship
 
 from server.models import Base
+from server.models.chat import chat_to_user
 
 
 log = logging.getLogger(__name__)
 
 
-friendship = Table(
-    'friendships', Base.metadata,
-    Column('friend_a_id', Integer, ForeignKey('user.id'), primary_key=True),
-    Column('friend_b_id', Integer, ForeignKey('user.id'), primary_key=True),
-    UniqueConstraint('friend_a_id', 'friend_b_id', name='unique_friendship'),
-    CheckConstraint('NOT(friend_a_id == friend_b_id)', name='check_self_friend')
-)
+class Friendship(Base):
+
+    __tablename__ = 'friendship'
+
+    id = Column(Integer, primary_key=True)
+    friend_a_id = Column(Integer, ForeignKey('user.id'))
+    friend_b_id = Column(Integer, ForeignKey('user.id'))
+
+    __table_args__ = (
+        UniqueConstraint('friend_a_id', 'friend_b_id', name='unique_friendship'),
+        CheckConstraint('NOT(friend_a_id == friend_b_id)', name='check_self_friend')
+    )
 
 
 class User(Base):
@@ -26,9 +32,12 @@ class User(Base):
     name = Column(String(128), unique=True, nullable=False)
     password = Column(String(128), nullable=False)
     friends = relationship('User',
-                           secondary=friendship,
-                           primaryjoin=id == friendship.c.friend_a_id,
-                           secondaryjoin=id == friendship.c.friend_b_id, )
+                           secondary=Friendship.__table__,
+                           primaryjoin=id == Friendship.__table__.c.friend_a_id,
+                           secondaryjoin=id == Friendship.__table__.c.friend_b_id, )
+    chats = relationship("Chat",
+                         secondary=chat_to_user,
+                         back_populates="users")
 
     def __init__(self, name, password):
         self.name = name
@@ -39,9 +48,9 @@ class User(Base):
 
 
 # this relationship is viewonly and selects across the union of all friends
-friendship_union = select([friendship.c.friend_a_id,
-                           friendship.c.friend_b_id]).union(select([friendship.c.friend_b_id,
-                                                                    friendship.c.friend_a_id])).alias()
+friendship_union = select([Friendship.__table__.c.friend_a_id,
+                           Friendship.__table__.c.friend_b_id]).union(select([Friendship.__table__.c.friend_b_id,
+                                                                              Friendship.__table__.c.friend_a_id])).alias()
 
 
 User.all_friends = relationship('User',
