@@ -1,7 +1,7 @@
 import logging
 import datetime
 
-from sqlalchemy import Column, Integer, DateTime, ForeignKey, Text, String, Table, UniqueConstraint
+from sqlalchemy import Column, Integer, DateTime, ForeignKey, String, Table
 from sqlalchemy.orm import relationship
 
 from server.models import Base
@@ -14,7 +14,6 @@ chat_to_user = Table(
     'chat_to_user', Base.metadata,
     Column('chat_id', Integer, ForeignKey('chat.id'), primary_key=True),
     Column('user_id', Integer, ForeignKey('user.id'), primary_key=True),
-    UniqueConstraint('chat_id', 'user_id', name='unique_participant'),
 )
 
 
@@ -27,34 +26,18 @@ class Chat(Base):
     created_ts = Column(DateTime, default=datetime.datetime.utcnow)
 
     owner_id = Column(Integer, ForeignKey('user.id'))
-    users = relationship("User",
+    owner = relationship('User')
+    users = relationship('User',
                          secondary=chat_to_user,
-                         back_populates="chats")
+                         back_populates='chats')
 
-    def __init__(self, name, users=[]):
+    def __init__(self, name, owner, users=[]):
         self.name = name
+        self.owner = owner
         self.users = users
 
-
-class ChatMessage(Base):
-
-    __tablename__ = 'chat_message'
-
-    id = Column(Integer, primary_key=True)
-    created_ts = Column(DateTime, default=datetime.datetime.utcnow)
-    data = Column(Text, nullable=False)
-
-    chat_id = Column(Integer, ForeignKey('chat.id'))
-    sent_by = Column(Integer, ForeignKey('user.id'))
-
-
-class Message(Base):
-
-    __tablename__ = 'message'
-
-    id = Column(Integer, primary_key=True)
-    created_ts = Column(DateTime, default=datetime.datetime.utcnow)
-    data = Column(Text, nullable=False)
-
-    friendship_id = Column(Integer, ForeignKey('friendship.id'))
-    sent_by = Column(Integer, ForeignKey('user.id'))
+    def __repr__(self):
+        return "Chat(id={id}, name={name}, owner={owner}, users={users})".format(id=self.id,
+                                                                                 name=self.name,
+                                                                                 owner=self.owner,
+                                                                                 users=self.users)
