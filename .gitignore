@@ -2,17 +2,21 @@
 __pycache__/
 *.py[cod]
 
-# Ignore folder for virtualenviroment
+# Ignore folder for virtual enviroment
 venv/
 
 # IDEA settings
 .idea/
 
+# coverage files
+.coverage
+
 # SQLite files
 *.db
 
-# Logging folder
-logs/
+# Logging folders
+server/log/
+test/log/
 
 # Mac specific
 .DS_Store

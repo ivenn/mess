@@ -26,7 +26,7 @@ class TestMessageModel(unittest.TestCase):
             self.db_session.commit()
 
         # create message
-        message = Message('Hello!', user1, user2)
+        message = Message('Hello!', by=user1, to=user2)
         self.db_session.add(message)
         self.db_session.commit()
 
@@ -35,7 +35,7 @@ class TestMessageModel(unittest.TestCase):
             Message.by == user1).filter(
             Message.to == user2).first()
 
-        # verify received message
+        # verify recieved message
         self.assertEqual(message_from_db, message)
 
 
