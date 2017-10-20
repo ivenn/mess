@@ -1,5 +1,5 @@
 import logging
-
+import time
 
 """
 All messages should start with 3 letter command name
@@ -77,6 +77,7 @@ class Message:
 
     def __init__(self, transaction_id=None):
         self.tr_id = transaction_id
+        #self.sent_timestamp = time.time()
 
     def as_bytes(self):
         raise NotImplementedError()
@@ -88,13 +89,19 @@ class NormalMessage(Message):
     CMD TR_ID PARAM_1 PARAM_2 PARAM_N<TERM_SEQUENCE>
     """
 
-    def __init__(self, cmd, params, transaction_id=None):
+    def __init__(self, cmd, params=[], transaction_id=None):
         self.cmd = cmd
         self.params = params
         super().__init__(transaction_id)
 
     def __repr__(self):
         return "NormalMessage(cmd: %s, params: %s)" % (self.cmd, self.params)
+
+    def __eq__(self, other):
+        if self.cmd == other.cmd and self.params == other.params:
+            return True
+        else:
+            return False
 
     def as_bytes(self):
         msg_template = "{cmd} {params}{term_seq}\n"
@@ -159,6 +166,10 @@ class ErrorMessage(Message):
         self.cmd = cmd
         self.code = err_code  # temporarily used for error description
         super().__init__(transaction_id)
+
+    def __repr__(self):
+        return "ErrorMessage(cmd={cmd}, err_code={err_code})".format(cmd=self.cmd,
+                                                                     err_code=self.code)
 
     def as_bytes(self):
         msg = "{cmd} {code}{term_seq}".format(cmd=self.cmd,

@@ -79,6 +79,5 @@ class TestUserModel(unittest.TestCase):
         with self.assertRaises(IntegrityError):
             self.db_session.commit()
 
-
 if __name__ == '__main__':
     unittest.main()

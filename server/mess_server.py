@@ -3,6 +3,8 @@ import socket
 import traceback
 import logging
 
+import sys
+
 from server.client import Client
 from server.messages import ErrorMessage
 
@@ -148,4 +150,6 @@ class MessServer:
             client_conn = client.conn
             self.on_close(client_conn)
         self.selector.close()
+        self.socket.close()
         self._running = False
+        sys.exit()

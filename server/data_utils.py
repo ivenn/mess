@@ -52,7 +52,6 @@ class DataParser:
         Parse bytes data to Message
         """
         log.info("Parsing {data}".format(data=data))
-        assert Message.TERM_SEQUENCE not in data
         data = data.decode('utf-8').strip()
         cmd = data[:3]
 

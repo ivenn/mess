@@ -5,6 +5,10 @@ from sqlalchemy.orm import sessionmaker
 Base = declarative_base()
 session = sessionmaker()
 
+from server.models.user import User
+from server.models.chat import Chat
+from server.models.message import Message
+
 
 def init_db(db='sqlite:///../mess.db', enable_logging=False):
     engine = create_engine(db,
