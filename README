@@ -1,3 +1,11 @@
+Testing:
+pylint --disable=R,C,W {dir}
+
+python -m unittest discover -s {dir} -p '*_test.py'
+
+coverage run --source={dir} -m unittest discover -s {dir} -p '*_test.py'
+coverage report -m
+
 useful info:
 1) https://www.cs.ru.nl/bachelorscripties/2011/Tim_van_Lokven___0438006___Review_and_Comparison_of_Instant_Messaging_Protocols.pdf
 2) http://www.cs.dartmouth.edu/~campbell/cs60/lab3.html
