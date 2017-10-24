@@ -11,6 +11,7 @@ All messages should start with 3 letter command name
 - LST - get contact list from server - [client >> server]
 - CHG - change info about new status of users - [client >> server][server >> client]
 - ACK - acknowledgement message - [client >> server][server >> client]
+- ACH - Add new participants to existent chat [client >> server]
 
 ##### PAYLOAD MESSAGES
 - MSG - send message with payload - [client >> server][server >> client]
@@ -29,6 +30,7 @@ CMD_ADD_CONTACT = 'ADD'
 CMD_FRIENDS = 'FRD'
 CMD_CHANGE_STATUS = 'CHG'
 CMD_MSG_ACK = 'ACK'
+CMD_ADD_CHAT_PARTICIPANT = 'ACP'
 
 CMD_INFO = 'INF'
 CMD_MESSAGE = 'MSG'
@@ -42,7 +44,8 @@ NORMAL_CMDS = [CMD_LOGIN,
                CMD_ADD_CONTACT,
                CMD_FRIENDS,
                CMD_CHANGE_STATUS,
-               CMD_MSG_ACK, ]
+               CMD_MSG_ACK,
+               CMD_ADD_CHAT_PARTICIPANT]
 
 PAYLOAD_CMDS = [CMD_MESSAGE,
                 CMD_INFO, ]

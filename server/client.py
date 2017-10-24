@@ -3,6 +3,7 @@ from functools import wraps
 
 from server.models import session
 from server.models.user import User
+from server.models.chat import Chat
 from server.online import ONLINE_USERS
 
 from server.base_client import BaseClient, CLIENT_OFFLINE, ClientIsAlreadyLoggedInException
@@ -153,3 +154,52 @@ class Client(BaseClient):
 
         # send msg
         ONLINE_USERS[to].send(PayloadMessage(msg.cmd, [self.user.name], msg.payload))
+
+
+    @register_cmd()
+    @login_required
+    def create_chat(self, name):
+        """
+        :param name: name of chat
+        :return: none
+        """
+        chat = Chat(name, owner=self.user, users=[self.user,])
+        session().add(chat)
+        session.commit()
+        self.send(PayloadMessage, [], chat.id)
+
+
+    @register_cmd()
+    @login_required
+    def add_chat_participant(self, chat_id, participant_id):
+        """
+        :param chat_id: ID of chat for adding new user
+        :param participant_id: id
+        :return:
+        """
+        chat = session().query(Chat).filter(Chat.id == chat_id).one()
+        chat.users.append(session().query(User).filter(User.name==participant_id))
+        chat.users.add(chat)
+
+    @register_cmd()
+    @login_required
+    def get_chats(self):
+        """
+        get all available chats for user
+        :return: None
+        """
+        self.send(PayloadMessage(CMD_INFO, [], self.user.chats))
+
+    @register_cmd()
+    @login_required
+    def sent_message_to_chat(self, chat_id, msg):
+        """
+        :param chat_id: chat id
+        :param msg: message to send
+        :return: None
+        """
+        pass
+
+
+
+
