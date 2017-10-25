@@ -38,7 +38,7 @@ def main(mode=None):
 
     configure_logging(log_path=config.log)
     init_db(db=config.db, enable_logging=False)
-    fill_db()
+    #fill_db()
 
     MessServer().run()
 

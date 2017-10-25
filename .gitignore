@@ -10,6 +10,7 @@ venv/
 
 # SQLite files
 *.db
+*.db-journal
 
 # coverage report files
 .coverage

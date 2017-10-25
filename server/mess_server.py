@@ -5,7 +5,7 @@ import logging
 import sys
 
 from server.client import Client
-from server.messages import ErrorMessage
+from protocol.messages import ErrorMessage
 
 
 log = logging.getLogger(__name__)
@@ -27,8 +27,9 @@ class MessServer:
         :param conn: connection to register as a client
         :return: None
         """
-        log.info("Register new client: {fileno}".format(fileno=conn.fileno()))
         self.clients[conn.fileno()] = Client(conn, self)
+        log.info("Register new client: {fileno}: {client}".format(fileno=conn.fileno(),
+                                                                  client=self.clients[conn.fileno()]))
 
     def unregister_client(self, conn):
         """
@@ -76,7 +77,6 @@ class MessServer:
             self.on_close(conn)
         except Exception as e:
             log.error(traceback.format_exc())
-            client.send(ErrorMessage(err_code=repr(repr(e).encode('utf-8'))))
 
     def on_error(self, conn):
         """
@@ -92,7 +92,7 @@ class MessServer:
         :param conn: connection to close
         :return: None
         """
-        log.info('closing connection to {0}'.format(conn.getpeername()))
+        log.info('closing connection to {0}'.format(self.clients[conn.fileno()].addr))
         self.unregister_client(conn)
         self.selector.unregister(conn)
         conn.close()
@@ -112,9 +112,8 @@ class MessServer:
                                events=selectors.EVENT_READ,
                                data=self.on_accept)
         self._running = True
-        log.info("Server({selector_impl}) listen on {host}:{port}".format(selector_impl=type(self.selector),
-                                                                          host=self.host,
-                                                                          port=self.port))
+        log.info("Server({selector_impl}) is listening on {host}:{port}".format(
+            selector_impl=type(self.selector), host=self.host, port=self.port))
 
     def run(self):
         """
