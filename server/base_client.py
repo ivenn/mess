@@ -36,10 +36,11 @@ class BaseClient:
         self.__status = None
         self.data_buffer = DataBuffer()
         self.data_parser = DataParser()
-        self.addr = "(%s:%s)" % (self.conn.getpeername()[0], self.conn.getpeername()[1])
+        self.addr = "({ip}:{port})".format(ip=self.conn.getpeername()[0],
+                                           port=self.conn.getpeername()[1])
 
     def __repr__(self):
-        return "Client(%s)" % (self.addr)
+        return "Client({address})".format(address=self.addr)
 
     @property
     def info(self):

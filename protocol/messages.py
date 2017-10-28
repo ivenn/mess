@@ -88,9 +88,9 @@ class NormalMessage(Message):
     CMD TR_ID PARAM_1 PARAM_2 PARAM_N<TERM_SEQUENCE>
     """
 
-    def __init__(self, cmd, params=[], transaction_id=None):
+    def __init__(self, cmd, params=None, transaction_id=None):
         self.cmd = cmd
-        self.params = params
+        self.params = params if params else []
         super().__init__(transaction_id)
 
     def __repr__(self):

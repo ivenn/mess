@@ -7,7 +7,6 @@ from test.lib.test_server import TestServer
 from server.models import init_db
 from server.models.utils import create_users, make_friends
 from server.base_client import USER_STATUS_DEFAULT, CLIENT_OFFLINE
-from server.config import PROJECT_PATH
 
 from protocol.messages import NormalMessage, CMD_CHANGE_STATUS
 
@@ -71,8 +70,8 @@ class TestFunctional(unittest.TestCase):
         self.user1.disconnect()
         self.user2.disconnect()
 
-    def test_x(self):
-        print("test_x")
+    def test_race_broken_pipe(self):
+        print("test_race_broken_pipe")
         self.user1 = TestUser(self.name_pass1[0], self.name_pass1[1])
         self.user2 = TestUser(self.name_pass2[0], self.name_pass2[1])
         self.user3 = TestUser(self.name_pass3[0], self.name_pass3[1])
