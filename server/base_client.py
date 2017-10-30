@@ -1,9 +1,11 @@
 import logging
+import socket
 
 from server.online import ONLINE_USERS
 from server.models.user import User
-from server.messages import Message, NormalMessage, CMD_CHANGE_STATUS
-from server.data_utils import DataBuffer, DataParser
+
+from protocol.messages import Message, NormalMessage, CMD_CHANGE_STATUS
+from protocol.data_utils import DataBuffer, DataParser
 
 
 log = logging.getLogger(__name__)
@@ -34,9 +36,11 @@ class BaseClient:
         self.__status = None
         self.data_buffer = DataBuffer()
         self.data_parser = DataParser()
+        self.addr = "({ip}:{port})".format(ip=self.conn.getpeername()[0],
+                                           port=self.conn.getpeername()[1])
 
     def __repr__(self):
-        return "Client(%s:%s)" % (self.conn.getpeername()[0], self.conn.getpeername()[1])
+        return "Client({address})".format(address=self.addr)
 
     @property
     def info(self):
@@ -100,5 +104,9 @@ class BaseClient:
             msg = msg.encode('utf-8')
         if isinstance(msg, Message):
             msg = msg.as_bytes()
-        self.conn.send(msg)
+        try:
+            self.conn.send(msg)
+        except BrokenPipeError:
+            log.warning('BrokenPipeError - %s' % self.user.name)
+            # TODO: clean all
         log.info("{client} <<< {msg}".format(client=self, msg=msg))

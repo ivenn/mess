@@ -27,7 +27,7 @@ def fill_db():
     s.commit()
 
 
-def main(mode=None):
+def main(mode=None, create_config=False):
     if mode == RUN_MODE_TEST:
         config = TestConfig()
     else:
@@ -38,7 +38,10 @@ def main(mode=None):
 
     configure_logging(log_path=config.log)
     init_db(db=config.db, enable_logging=False)
-    fill_db()
+
+    if mode != RUN_MODE_TEST and create_config:
+        print("Creating configuration...")
+        fill_db()
 
     MessServer().run()
 
@@ -49,6 +52,12 @@ if __name__ == '__main__':
                       "--mode",
                       dest="mode",
                       help="server run mode")
+    parser.add_option("-c",
+                      "--config",
+                      action="store_true",
+                      dest="config",
+                      default=False,
+                      help="create basic configuration")
     (options, args) = parser.parse_args()
 
-    main(mode=options.mode)
+    main(mode=options.mode, create_config=options.config)
