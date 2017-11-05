@@ -8,7 +8,7 @@ from server.online import ONLINE_USERS
 
 from server.base_client import BaseClient, CLIENT_OFFLINE, ClientIsAlreadyLoggedInException
 
-from server.messages import CMD_INFO, CMD_LOGIN, CMD_LOGOUT, CMD_FRIENDS, CMD_MESSAGE
+from server.messages import CMD_INFO, CMD_LOGIN, CMD_LOGOUT, CMD_FRIENDS, CMD_MESSAGE, CMD_CHAT_MESSAGE
 from server.messages import PayloadMessage
 
 
@@ -44,6 +44,9 @@ class ClientIsNotLoggedInException(Exception):
 
 
 class NoHandlerForCmdRegisteredException(Exception):
+    pass
+
+class InvalidChatID(Exception):
     pass
 
 
@@ -178,7 +181,7 @@ class Client(BaseClient):
         :return:
         """
         chat = session().query(Chat).filter(Chat.id == chat_id).one()
-        chat.users.append(session().query(User).filter(User.name==participant_id))
+        chat.users.append(session().query(User).filter(User.name == participant_id))
         chat.users.add(chat)
 
     @register_cmd()
@@ -190,16 +193,22 @@ class Client(BaseClient):
         """
         self.send(PayloadMessage(CMD_INFO, [], self.user.chats))
 
-    @register_cmd()
+    @register_cmd(CMD_CHAT_MESSAGE)
     @login_required
-    def sent_message_to_chat(self, chat_id, msg):
+    def sent_message_to_chat(self, msg):
         """
         :param chat_id: chat id
         :param msg: message to send
         :return: None
         """
-        pass
+        log.info('User {user} sent message {msg} to chat', user=self.user, msg=msg)
+        chat_id = msg.params[0]
+        # verify to
+        users_to = session().query(Chat.users).filter(chat_id == chat_id and self.id in Chat.users)
+        if not users_to:
+            raise InvalidChatID(chat_id)
 
-
-
-
+        for user_to in users_to:
+            if user_to.name in ONLINE_USERS:
+                # send msg
+                ONLINE_USERS[users_to].send(PayloadMessage(msg.cmd, [self.user.name], msg.payload))

@@ -1,6 +1,7 @@
 from server.mess_server import MessServer
 from server.models import session, init_db
 from server.models.user import User
+from server.models.chat import Chat
 from server.config import configure_logging
 
 
@@ -27,7 +28,21 @@ def fill_db(db_session):
 
     users['userA'].friends = [users['userB'], users['userC']]
     users['userB'].friends.append(users['userC'])
+
     db_session.commit()
+
+    # create chat with participants
+    chat_name = 'First_chat'
+    chat_owner = 'UserZ'
+    first_chat = db_session.query(Chat).filter(chat_name == chat_name and chat_owner == users[chat_owner]).first()
+    if first_chat:
+        pass
+    else:
+        first_chat = Chat(chat_name, users[chat_owner])
+    first_chat.users = [users[chat_owner], users['userC'], users['UserB']]
+    db_session.add(first_chat)
+    db_session.commit()
+
 
 
 if __name__ == '__main__':
