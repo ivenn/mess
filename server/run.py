@@ -33,13 +33,13 @@ def fill_db(db_session):
 
     # create chat with participants
     chat_name = 'First_chat'
-    chat_owner = 'UserZ'
-    first_chat = db_session.query(Chat).filter(chat_name == chat_name and chat_owner == users[chat_owner]).first()
+    chat_owner = 'userZ'
+    first_chat = db_session.query(Chat).filter(Chat.name == chat_name and Chat.owner == users[chat_owner]).first()
     if first_chat:
         pass
     else:
         first_chat = Chat(chat_name, users[chat_owner])
-    first_chat.users = [users[chat_owner], users['userC'], users['UserB']]
+    first_chat.users = [users[chat_owner], users['userC'], users['userB']]
     db_session.add(first_chat)
     db_session.commit()
 

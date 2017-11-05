@@ -8,7 +8,8 @@ from server.online import ONLINE_USERS
 
 from server.base_client import BaseClient, CLIENT_OFFLINE, ClientIsAlreadyLoggedInException
 
-from server.messages import CMD_INFO, CMD_LOGIN, CMD_LOGOUT, CMD_FRIENDS, CMD_MESSAGE, CMD_CHAT_MESSAGE
+from server.messages import CMD_INFO, CMD_LOGIN, CMD_LOGOUT, CMD_FRIENDS, CMD_MESSAGE, CMD_CHAT_MESSAGE, \
+    CMD_GET_CHATS, CMD_ADD_CHAT_PARTICIPANT, CMD_CREATE_CHAT
 from server.messages import PayloadMessage
 
 
@@ -159,34 +160,43 @@ class Client(BaseClient):
         ONLINE_USERS[to].send(PayloadMessage(msg.cmd, [self.user.name], msg.payload))
 
 
-    @register_cmd()
+    @register_cmd(CMD_CREATE_CHAT)
     @login_required
-    def create_chat(self, name):
+    def create_chat(self, msg):
         """
-        :param name: name of chat
         :return: none
         """
-        chat = Chat(name, owner=self.user, users=[self.user,])
-        session().add(chat)
-        session.commit()
-        self.send(PayloadMessage, [], chat.id)
+        chat_name = msg.payload
+        chat = Chat(chat_name, owner=self.user, users=[self.user,])
+        db_session = session().object_session(chat)
+        db_session.add(chat)
+        db_session.commit()
+        log.info("New chat '{}' has been created".format(chat))
+        self.send(PayloadMessage(CMD_INFO, [], str(chat.id)))
 
-
-    @register_cmd()
+    @register_cmd(CMD_ADD_CHAT_PARTICIPANT)
     @login_required
-    def add_chat_participant(self, chat_id, participant_id):
+    def add_chat_participant(self, msg):
         """
-        :param chat_id: ID of chat for adding new user
-        :param participant_id: id
-        :return:
+        :return: None
         """
-        chat = session().query(Chat).filter(Chat.id == chat_id).one()
-        chat.users.append(session().query(User).filter(User.name == participant_id))
-        chat.users.add(chat)
+        chat_id = msg.params[0]
+        participant_name = msg.params[1]
+        chat = session().query(Chat).filter(Chat.id == chat_id).first()
+        db_session = session().object_session(chat)
+        if not chat:
+            raise InvalidChatID(chat)
+        if self.user.name not in [user.name for user in chat.users]:
+            raise InvalidChatID
 
-    @register_cmd()
+        chat = db_session.query(Chat).filter(Chat.id == chat_id).one()
+        chat.users.append(db_session.query(User).filter(User.name == participant_name).first())
+        db_session.add(chat)
+        db_session.commit()
+
+    @register_cmd(CMD_GET_CHATS)
     @login_required
-    def get_chats(self):
+    def get_chats(self, msg):
         """
         get all available chats for user
         :return: None
@@ -197,18 +207,23 @@ class Client(BaseClient):
     @login_required
     def sent_message_to_chat(self, msg):
         """
-        :param chat_id: chat id
-        :param msg: message to send
         :return: None
         """
-        log.info('User {user} sent message {msg} to chat', user=self.user, msg=msg)
+        log.info('User {user} sent message {msg} to chat'.format(user=self.user, msg=msg))
         chat_id = msg.params[0]
         # verify to
-        users_to = session().query(Chat.users).filter(chat_id == chat_id and self.id in Chat.users)
-        if not users_to:
+        chat = session().query(Chat).filter(Chat.id == chat_id).first()
+        if not chat:
+            raise InvalidChatID(chat)
+        users_to = [user.name for user in chat.users]
+        log.debug('Found users {users_to} for chat with id {chat_id}'.format(users_to=users_to, chat_id=chat_id))
+
+        if not users_to or self.user.name not in users_to:
             raise InvalidChatID(chat_id)
 
         for user_to in users_to:
-            if user_to.name in ONLINE_USERS:
+            if user_to == self.user.name:
+                continue
+            if user_to in ONLINE_USERS:
                 # send msg
-                ONLINE_USERS[users_to].send(PayloadMessage(msg.cmd, [self.user.name], msg.payload))
+                ONLINE_USERS[user_to].send(PayloadMessage(msg.cmd, [chat_id, self.user.name], msg.payload))

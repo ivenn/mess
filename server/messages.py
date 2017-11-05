@@ -30,10 +30,15 @@ CMD_ADD_CONTACT = 'ADD'
 CMD_FRIENDS = 'FRD'
 CMD_CHANGE_STATUS = 'CHG'
 CMD_MSG_ACK = 'ACK'
-CMD_ADD_CHAT_PARTICIPANT = 'ACP'
 
 CMD_INFO = 'INF'
 CMD_MESSAGE = 'MSG'
+
+#Chats messages
+CMD_CHAT_MESSAGE = 'CMS'
+CMD_GET_CHATS = 'GCH'
+CMD_ADD_CHAT_PARTICIPANT = 'ACP'
+CMD_CREATE_CHAT = 'CCH'
 
 CMD_ERROR = 'ERR'
 
@@ -45,10 +50,13 @@ NORMAL_CMDS = [CMD_LOGIN,
                CMD_FRIENDS,
                CMD_CHANGE_STATUS,
                CMD_MSG_ACK,
-               CMD_ADD_CHAT_PARTICIPANT]
+               CMD_ADD_CHAT_PARTICIPANT,
+               CMD_GET_CHATS,]
 
 PAYLOAD_CMDS = [CMD_MESSAGE,
-                CMD_INFO, ]
+                CMD_INFO,
+                CMD_CHAT_MESSAGE,
+                CMD_CREATE_CHAT]
 
 ERROR_CMDS = [CMD_ERROR, ]
 
