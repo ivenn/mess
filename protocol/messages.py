@@ -99,13 +99,19 @@ class NormalMessage(Message):
     CMD TR_ID PARAM_1 PARAM_2 PARAM_N<TERM_SEQUENCE>
     """
 
-    def __init__(self, cmd, params, transaction_id=None):
+    def __init__(self, cmd, params=None, transaction_id=None):
         self.cmd = cmd
-        self.params = params
+        self.params = params if params else []
         super().__init__(transaction_id)
 
     def __repr__(self):
         return "NormalMessage(cmd: %s, params: %s)" % (self.cmd, self.params)
+
+    def __eq__(self, other):
+        if self.cmd == other.cmd and self.params == self.params:
+            return True
+        else:
+            return False
 
     def as_bytes(self):
         msg_template = "{cmd} {params}{term_seq}\n"
@@ -171,6 +177,9 @@ class ErrorMessage(Message):
         self.code = err_code  # temporarily used for error description
         super().__init__(transaction_id)
 
+    def __repr__(self):
+        return "ErrorMessage(cmd={cmd}, code={code})".format(cmd=self.cmd, code=self.code)
+
     def as_bytes(self):
         msg = "{cmd} {code}{term_seq}".format(cmd=self.cmd,
                                               code=self.code,
@@ -212,67 +221,6 @@ class ServiceMessage(Message):
         tr_id = 0
         cmd = splitted[0]
         return ServiceMessage(tr_id, cmd)
-
-
-class DataBuffer:
-
-    def __init__(self):
-        self._data_buffer = b""
-
-    def __repr__(self):
-        return "MsgHandler(buffer:{data_buffer})".format(data_buffer=self._data_buffer)
-
-    @property
-    def data_buffer(self):
-        return self._data_buffer
-
-    def push(self, data):
-        """
-        Put data in buffers and returns list of bytes strings to parse
-        """
-        raw_messages = []
-        if data == b'\n':
-            return raw_messages  # ignore single newline symbols
-        self._data_buffer += data
-        log.info("Got {data} in data buffer".format(data=self._data_buffer))
-        if Message.TERM_SEQUENCE in self._data_buffer:
-            split_data = self._data_buffer.split(Message.TERM_SEQUENCE)
-            self._data_buffer = split_data[-1]
-            raw_messages = split_data[:-1]
-        return raw_messages
-
-    def flush(self):
-        self._data_buffer = b""
-
-
-class DataParser:
-
-    def __init__(self):
-        pass
-
-    def parse(self, data):
-        """
-        Parse bytes data to Message
-        """
-        log.info("Parsing {data}".format(data=data))
-        assert Message.TERM_SEQUENCE not in data
-        data = data.decode('utf-8').strip()
-        cmd = data[:3]
-
-        if cmd in NORMAL_CMDS:
-            msg = NormalMessage.from_string(data)
-        elif cmd in PAYLOAD_CMDS:
-            msg = PayloadMessage.from_string(data)
-        elif cmd in ERROR_CMDS:
-            msg = ErrorMessage.from_string(data)
-        elif cmd in SERVICE_CMDS:
-            msg = ServiceMessage.from_string(data)
-        else:
-            if cmd not in CMDS:
-                raise UnknownCommand(cmd)
-            else:
-                raise ParseError(cmd, data)
-        return msg
 
 
 if __name__ == '__main__':

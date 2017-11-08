@@ -8,10 +8,9 @@ from server.online import ONLINE_USERS
 
 from server.base_client import BaseClient, CLIENT_OFFLINE, ClientIsAlreadyLoggedInException
 
-from server.messages import CMD_INFO, CMD_LOGIN, CMD_LOGOUT, CMD_FRIENDS, CMD_MESSAGE, CMD_CHAT_MESSAGE, \
+from protocol.messages import CMD_INFO, CMD_LOGIN, CMD_LOGOUT, CMD_FRIENDS, CMD_MESSAGE, CMD_CHAT_MESSAGE, \
     CMD_GET_CHATS, CMD_ADD_CHAT_PARTICIPANT, CMD_CREATE_CHAT
-from server.messages import PayloadMessage
-
+from protocol.messages import PayloadMessage
 
 log = logging.getLogger(__name__)
 
@@ -117,6 +116,7 @@ class Client(BaseClient):
                 self.user = user
         else:
             raise InvalidUserCredentials()
+        log.info(ONLINE_USERS)
 
     @register_cmd(CMD_LOGOUT)
     @login_required
@@ -126,6 +126,7 @@ class Client(BaseClient):
         """
         log.info("{user} logged out from {client}".format(user=self.user, client=self))
         self.user = None
+        log.info(ONLINE_USERS)
 
     @register_cmd(CMD_FRIENDS)
     @login_required
