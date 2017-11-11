@@ -54,3 +54,20 @@ def get_user_by_name(name):
     else:
         return None
 
+
+def create_chat(name, chat_owner, participants=None):
+    """
+    Create chat
+    :param name: name of new chat
+    :param chat_owner: User instance of chat owner
+    :param participants: List of Users instants
+    :return: chat object
+    """
+    participants = participants if participants else []
+    chat = Chat(name, chat_owner)
+    participants = participants if participants else []
+    participants.append(chat_owner)
+    chat.users = participants
+    s.add(chat)
+    s.commit()
+    return chat

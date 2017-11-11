@@ -168,8 +168,8 @@ class Client(BaseClient):
         :return: none
         """
         chat_name = msg.payload
+        db_session = session()
         chat = Chat(chat_name, owner=self.user, users=[self.user,])
-        db_session = session().object_session(chat)
         db_session.add(chat)
         db_session.commit()
         log.info("New chat '{}' has been created".format(chat))
@@ -183,8 +183,8 @@ class Client(BaseClient):
         """
         chat_id = msg.params[0]
         participant_name = msg.params[1]
-        chat = session().query(Chat).filter(Chat.id == chat_id).first()
-        db_session = session().object_session(chat)
+        db_session = session()
+        chat = db_session.query(Chat).filter(Chat.id == chat_id).first()
         if not chat:
             raise InvalidChatID(chat)
         if self.user.name not in [user.name for user in chat.users]:
@@ -227,4 +227,8 @@ class Client(BaseClient):
                 continue
             if user_to in ONLINE_USERS:
                 # send msg
+                log.info('Send MSG {msg} for chat with id {chat_id} to {usr}'.format(
+                    msg=msg.payload, chat_id=chat_id, usr=users_to))
                 ONLINE_USERS[user_to].send(PayloadMessage(msg.cmd, [chat_id, self.user.name], msg.payload))
+            else:
+                log.debug("User {} isn't online".format(user_to))
