@@ -46,6 +46,7 @@ class ClientIsNotLoggedInException(Exception):
 class NoHandlerForCmdRegisteredException(Exception):
     pass
 
+
 class InvalidChatID(Exception):
     pass
 
@@ -160,12 +161,11 @@ class Client(BaseClient):
         # send msg
         ONLINE_USERS[to].send(PayloadMessage(msg.cmd, [self.user.name], msg.payload))
 
-
     @register_cmd(CMD_CREATE_CHAT)
     @login_required
     def create_chat(self, msg):
         """
-        :return: none
+        Create new chat and send new chat id back to the client
         """
         chat_name = msg.payload
         db_session = session()
@@ -179,7 +179,7 @@ class Client(BaseClient):
     @login_required
     def add_chat_participant(self, msg):
         """
-        :return: None
+        Add new participants to the chat
         """
         chat_id = msg.params[0]
         participant_name = msg.params[1]
@@ -200,7 +200,6 @@ class Client(BaseClient):
     def get_chats(self, msg):
         """
         get all available chats for user
-        :return: None
         """
         self.send(PayloadMessage(CMD_INFO, [], self.user.chats))
 
@@ -208,7 +207,7 @@ class Client(BaseClient):
     @login_required
     def sent_message_to_chat(self, msg):
         """
-        :return: None
+        Send message to all online users in chat
         """
         log.info('User {user} sent message {msg} to chat'.format(user=self.user, msg=msg))
         chat_id = msg.params[0]

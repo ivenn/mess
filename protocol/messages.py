@@ -10,11 +10,14 @@ All messages should start with 3 letter command name
 - ADD - add user to client list - [client >> server]
 - LST - get contact list from server - [client >> server]
 - CHG - change info about new status of users - [client >> server][server >> client]
-- ACK - acknowledgement message - [client >> server][server >> client]
+- ACK - acknowledgement message - [client >> server][server >> client]    
 - ACH - Add new participants to existent chat [client >> server]
+- GCH - Get list of available chats[clint >> server]
 
 ##### PAYLOAD MESSAGES
 - MSG - send message with payload - [client >> server][server >> client]
+- CMS - send message to chat - [client >> server][server >> multiple clients]
+- CCH - create new chat - [client >> server]
 
 ##### ERROR MESSAGES
 - ERR - error response
@@ -34,7 +37,7 @@ CMD_MSG_ACK = 'ACK'
 CMD_INFO = 'INF'
 CMD_MESSAGE = 'MSG'
 
-#Chats messages
+# Chats messages
 CMD_CHAT_MESSAGE = 'CMS'
 CMD_GET_CHATS = 'GCH'
 CMD_ADD_CHAT_PARTICIPANT = 'ACP'
