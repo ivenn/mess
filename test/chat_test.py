@@ -61,11 +61,12 @@ class TestFunctional(unittest.TestCase):
         print("Send message")
         msg_text = "First message"
         self.user4.send_message(
-            "{cmd} {chat_id} || {msg}..".format(cmd=CMD_CHAT_MESSAGE, chat_id=self.base_chat.id, msg=msg_text))
+            "{cmd} {chat_id} ||{msg}..".format(cmd=CMD_CHAT_MESSAGE, chat_id=self.base_chat.id, msg=msg_text))
 
         msg_usr1 = self.user1.recv_msg()
         msg_usr3 = self.user3.recv_msg()
         self.assertEqual(msg_usr1.payload, msg_usr3.payload, "All users should receive the same message")
+        self.assertEqual(msg_usr1.payload, msg_text, "Users should receive the right message")
 
         self.disconnect_users([self.user4, self.user3, self.user1])
 
