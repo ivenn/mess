@@ -16,7 +16,7 @@ All messages should start with 3 letter command name
 
 ##### PAYLOAD MESSAGES
 - MSG - send message with payload - [client >> server][server >> client]
-- CMS - send message to chat - [client >> server][server >> multiple clients]
+- CMS - send message to chat - [client >> server][server >> clients]
 - CCH - create new chat - [client >> server]
 
 ##### ERROR MESSAGES

@@ -4,6 +4,7 @@ from functools import wraps
 from server.models import session
 from server.models.user import User
 from server.models.chat import Chat
+from server.models.utils import create_chat, get_chat_by_id, add_chat_participant
 from server.online import ONLINE_USERS
 
 from server.base_client import BaseClient, CLIENT_OFFLINE, ClientIsAlreadyLoggedInException
@@ -167,13 +168,10 @@ class Client(BaseClient):
         """
         Create new chat and send new chat id back to the client
         """
-        chat_name = msg.payload
-        db_session = session()
-        chat = Chat(chat_name, owner=self.user, users=[self.user,])
-        db_session.add(chat)
-        db_session.commit()
-        log.info("New chat '{}' has been created".format(chat))
-        self.send(PayloadMessage(CMD_INFO, [], str(chat.id)))
+        new_chat = create_chat(msg.payload, self.user)
+
+        log.info("New chat '{}' has been created".format(new_chat))
+        self.send(PayloadMessage(CMD_INFO, [], str(new_chat.id)))
 
     @register_cmd(CMD_ADD_CHAT_PARTICIPANT)
     @login_required
@@ -184,16 +182,13 @@ class Client(BaseClient):
         chat_id = msg.params[0]
         participant_name = msg.params[1]
         db_session = session()
-        chat = db_session.query(Chat).filter(Chat.id == chat_id).first()
+        chat = get_chat_by_id(chat_id)
         if not chat:
             raise InvalidChatID(chat)
         if self.user.name not in [user.name for user in chat.users]:
             raise InvalidChatID
 
-        chat = db_session.query(Chat).filter(Chat.id == chat_id).one()
-        chat.users.append(db_session.query(User).filter(User.name == participant_name).first())
-        db_session.add(chat)
-        db_session.commit()
+        add_chat_participant(chat_id, participant_name)
 
     @register_cmd(CMD_GET_CHATS)
     @login_required
@@ -212,7 +207,7 @@ class Client(BaseClient):
         log.info('User {user} sent message {msg} to chat'.format(user=self.user, msg=msg))
         chat_id = msg.params[0]
         # verify to
-        chat = session().query(Chat).filter(Chat.id == chat_id).first()
+        chat = get_chat_by_id(chat_id)
         if not chat:
             raise InvalidChatID(chat)
         users_to = [user.name for user in chat.users]
