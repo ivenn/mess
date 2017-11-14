@@ -42,6 +42,7 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(128), unique=True, nullable=False)
     password = Column(String(128), nullable=False)
+    last_online_ts = Column(DateTime, default=datetime.datetime.utcnow)
     friends = relationship('User',
                            secondary=Friendship.__table__,
                            primaryjoin=id == Friendship.__table__.c.friend_a_id,
@@ -61,8 +62,9 @@ class User(Base):
 
 # this relationship is viewonly and selects across the union of all friends
 friendship_union = select([Friendship.__table__.c.friend_a_id,
-                           Friendship.__table__.c.friend_b_id]).union(select([Friendship.__table__.c.friend_b_id,
-                                                                              Friendship.__table__.c.friend_a_id])).alias()
+                           Friendship.__table__.c.friend_b_id]).union(
+                   select([Friendship.__table__.c.friend_b_id,
+                           Friendship.__table__.c.friend_a_id])).alias()
 
 
 User.all_friends = relationship('User',

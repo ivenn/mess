@@ -134,6 +134,18 @@ class PayloadMessage(Message):
         self.payload = payload
         super().__init__(transaction_id)
 
+    def __repr__(self):
+        return "PayloadMessage(cmd: {cmd}, params: {params}, payload: {payload})".format(
+            cmd=self.cmd, params=self.params, payload=self.payload)
+
+    def __eq__(self, other):
+        if (self.cmd == other.cmd and
+           self.params == other.params and
+           self.payload == other.payload):
+            return True
+        else:
+            return False
+
     def as_bytes(self):
         msg_template = "{cmd} {params} {payload_size}{split_seq}{payload}{term_seq}\n"
         msg = msg_template.format(cmd=self.cmd,
@@ -151,7 +163,13 @@ class PayloadMessage(Message):
         service_part_splitted = service_part.split(Message.SEPARATOR_SYMBOL_STR)
         cmd = service_part_splitted[0]
         params = service_part_splitted[1:-1]
-        payload_size = service_part_splitted[-1]
+        payload_size = int(service_part_splitted[-1])
+
+        if len(payload) != payload_size:
+            log.warning("Payload({payload}) size is not as expected: act:{act} exp:{exp}".format(payload=payload,
+                                                                                                 act=len(payload),
+                                                                                                 exp=payload_size))
+
         return PayloadMessage(cmd, params, payload)
 
 

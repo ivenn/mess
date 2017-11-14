@@ -10,6 +10,8 @@ from server.base_client import BaseClient, CLIENT_OFFLINE, ClientIsAlreadyLogged
 from protocol.messages import CMD_INFO, CMD_LOGIN, CMD_LOGOUT, CMD_FRIENDS, CMD_MESSAGE
 from protocol.messages import PayloadMessage
 
+from server.models.utils import update_user_last_online_ts, create_message, get_messages, get_user_by_name
+
 
 log = logging.getLogger(__name__)
 
@@ -100,7 +102,7 @@ class Client(BaseClient):
             name, password = msg.params
         if self.user:
             raise ClientIsAlreadyLoggedInException(self.user)
-        user = session().query(User).filter(User.name == name).one()
+        user = get_user_by_name(name)
         if user:
             if user.name in ONLINE_USERS:
                 raise UserAlreadyLoggedInException(user.name)
@@ -110,9 +112,12 @@ class Client(BaseClient):
                 else:
                     raise InvalidUserCredentials()
                 self.user = user
+                messages = get_messages(self.user, from_ts=self.user.last_online_ts)
+                for m in messages:
+                    self.send(PayloadMessage(CMD_MESSAGE, [m.by.name], m.data))
+                update_user_last_online_ts(self.user)
         else:
             raise InvalidUserCredentials()
-        log.info(ONLINE_USERS)
 
     @register_cmd(CMD_LOGOUT)
     @login_required
@@ -121,8 +126,8 @@ class Client(BaseClient):
         Logout client
         """
         log.info("{user} logged out from {client}".format(user=self.user, client=self))
+        update_user_last_online_ts(self.user)
         self.user = None
-        log.info(ONLINE_USERS)
 
     @register_cmd(CMD_FRIENDS)
     @login_required
@@ -145,13 +150,14 @@ class Client(BaseClient):
         # verify msg
         to = msg.params[0]
         # verify to
-        user_to = session().query(User).filter(User.name == to).one()
+        user_to = get_user_by_name(to)
         if not user_to:
             raise NoSuchUserException(to)
         if user_to.name not in [u.name for u in self.user.all_friends]:
             raise NoSuchFriendException(to)
-        if user_to.name not in ONLINE_USERS:
-            raise NoSuchUserOnlineException(to)
 
-        # send msg
-        ONLINE_USERS[to].send(PayloadMessage(msg.cmd, [self.user.name], msg.payload))
+        # save msg to db
+        create_message(user_to, self.user, msg.payload)
+
+        if user_to.name in ONLINE_USERS:
+            ONLINE_USERS[to].send(PayloadMessage(msg.cmd, [self.user.name], msg.payload))

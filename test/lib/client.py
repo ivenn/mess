@@ -36,3 +36,4 @@ class TestClient:
             return
         self.sock.close()
         self.__connected = False
+

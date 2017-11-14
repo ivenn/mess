@@ -52,15 +52,10 @@ class TestServer:
                 self.pid = None
 
     def kill(self):
-        if self.pid:
-            print("###### server is still running: %s" % self.pid)
-            self.proc.terminate()
-
-            if is_process_running(self.pid):
-                print('still running')
-                os.kill(self.pid, 9)
-                if is_process_running(self.pid):
-                    print('still still')
+        if is_process_running(self.pid):
+            os.kill(self.pid, 9)
+        else:
+            print('No running process with pid {pid}'.format(pid=self.pid))
 
 
 if __name__ == '__main__':

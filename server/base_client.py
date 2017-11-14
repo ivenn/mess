@@ -40,7 +40,10 @@ class BaseClient:
                                            port=self.conn.getpeername()[1])
 
     def __repr__(self):
-        return "Client({address})".format(address=self.addr)
+        if self.user:
+            return "Client({username})".format(username=self.user.name)
+        else:
+            return "Client({address})".format(address=self.addr)
 
     @property
     def info(self):
@@ -107,6 +110,8 @@ class BaseClient:
         try:
             self.conn.send(msg)
         except BrokenPipeError:
-            log.warning('BrokenPipeError - %s' % self.user.name)
+            self.log.warning('BrokenPipeError - %s' % self.user.name)
             # TODO: clean all
+        except ConnectionResetError as cre:
+            log.warning(cre)
         log.info("{client} <<< {msg}".format(client=self, msg=msg))
