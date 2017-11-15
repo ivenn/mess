@@ -54,3 +54,41 @@ def get_user_by_name(name):
     else:
         return None
 
+
+def create_chat(name, chat_owner, participants=None):
+    """
+    Create chat
+    :param name: name of new chat
+    :param chat_owner: User instance of chat owner
+    :param participants: List of Users instants
+    :return: chat object
+    """
+    participants = participants if participants else []
+    chat = Chat(name, chat_owner)
+    participants.append(chat_owner)
+    chat.users = participants
+    s.add(chat)
+    s.commit()
+    return chat
+
+
+def get_chat_by_id(chat_id):
+    """
+    Find out Chat in DB by chat id
+    :param chat_id: chat id
+    :return: Chat object if or None if there is no chat this such ID
+    """
+    return s.query(Chat).filter(Chat.id == chat_id).first()
+
+
+def add_chat_participant(chat_id, participant_name):
+    """
+    Add chat participant to existent chat
+    :param chat_id: Chat object
+    :param participant_name: User name
+    :return: None
+    """
+    chat = get_chat_by_id(chat_id)
+    chat.users.append(s.query(User).filter(User.name == participant_name).first())
+    s.add(chat)
+    s.commit()

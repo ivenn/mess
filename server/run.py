@@ -2,7 +2,8 @@ from optparse import OptionParser
 
 from server.mess_server import MessServer
 from server.models import session, init_db
-from server.models.utils import create_users
+from server.models.chat import Chat
+from server.models.utils import create_users, create_chat
 from server.config import Config, TestConfig
 from server.config.log import configure_logging
 
@@ -25,6 +26,13 @@ def fill_db():
     users['userA'].friends = [users['userB'], users['userC']]
     users['userB'].friends.append(users['userC'])
     s.commit()
+
+    # create chat with participants
+    chat_name = 'First_chat'
+    chat_owner = 'userZ'
+    first_chat = s.query(Chat).filter(Chat.name == chat_name and Chat.owner == users[chat_owner]).first()
+    if not first_chat:
+        create_chat(chat_name, users[chat_owner], [users['userC'], users['userB']])
 
 
 def main(mode=None, create_config=False):

@@ -28,10 +28,10 @@ class TestUser:
         self.name = name
         self.password = password
         self.client = None
-        self.parcer = DataParser()
+        self.parser = DataParser()
         self.server_host = server_host
         self.server_port = server_port
-        self.__logged_in = False
+        self.__loggedin = False
 
     @property
     def is_connected(self):
@@ -54,9 +54,13 @@ class TestUser:
     def recv_msg(self, timeout=5):
         data = self.client.recv(timeout=timeout)
         data = data.split(Message.TERM_SEQUENCE)[0]
-        msg = self.parcer.parse(data)
+        msg = self.parser.parse(data)
 
         return msg
+
+    @connected
+    def send_message(self, msg):
+        self.client.send(msg)
 
     @connected
     def logout(self):
