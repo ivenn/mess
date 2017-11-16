@@ -97,7 +97,9 @@ class NormalMessage(Message):
         return "NormalMessage(cmd: %s, params: %s)" % (self.cmd, self.params)
 
     def __eq__(self, other):
-        if self.cmd == other.cmd and self.params == self.params:
+        if (isinstance(other, NormalMessage) and
+           self.cmd == other.cmd and
+           self.params == self.params):
             return True
         else:
             return False
@@ -139,7 +141,8 @@ class PayloadMessage(Message):
             cmd=self.cmd, params=self.params, payload=self.payload)
 
     def __eq__(self, other):
-        if (self.cmd == other.cmd and
+        if (isinstance(other, PayloadMessage) and
+           self.cmd == other.cmd and
            self.params == other.params and
            self.payload == other.payload):
             return True
