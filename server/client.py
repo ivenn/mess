@@ -3,11 +3,14 @@ from functools import wraps
 
 from server.models import session
 from server.models.user import User
+from server.models.chat import Chat
+from server.models.utils import create_chat, get_chat_by_id, add_chat_participant
 from server.online import ONLINE_USERS
 
 from server.base_client import BaseClient, CLIENT_OFFLINE, ClientIsAlreadyLoggedInException
 
-from protocol.messages import CMD_INFO, CMD_LOGIN, CMD_LOGOUT, CMD_FRIENDS, CMD_MESSAGE
+from protocol.messages import CMD_INFO, CMD_LOGIN, CMD_LOGOUT, CMD_FRIENDS, CMD_MESSAGE, CMD_CHAT_MESSAGE, \
+    CMD_GET_CHATS, CMD_ADD_CHAT_PARTICIPANT, CMD_CREATE_CHAT
 from protocol.messages import PayloadMessage
 
 from server.models.utils import update_user_last_online_ts, create_message, get_messages, get_user_by_name
@@ -45,6 +48,10 @@ class ClientIsNotLoggedInException(Exception):
 
 
 class NoHandlerForCmdRegisteredException(Exception):
+    pass
+
+
+class InvalidChatID(Exception):
     pass
 
 
@@ -161,3 +168,68 @@ class Client(BaseClient):
 
         if user_to.name in ONLINE_USERS:
             ONLINE_USERS[to].send(PayloadMessage(msg.cmd, [self.user.name], msg.payload))
+
+    @register_cmd(CMD_CREATE_CHAT)
+    @login_required
+    def create_chat(self, msg):
+        """
+        Create new chat and send new chat id back to the client
+        """
+        new_chat = create_chat(msg.payload, self.user)
+
+        log.info("New chat '{}' has been created".format(new_chat))
+        self.send(PayloadMessage(CMD_INFO, [], str(new_chat.id)))
+
+    @register_cmd(CMD_ADD_CHAT_PARTICIPANT)
+    @login_required
+    def add_chat_participant(self, msg):
+        """
+        Add new participants to the chat
+        """
+        chat_id = msg.params[0]
+        participant_name = msg.params[1]
+        db_session = session()
+        chat = get_chat_by_id(chat_id)
+        if not chat:
+            raise InvalidChatID(chat)
+        if self.user.name not in [user.name for user in chat.users]:
+            raise InvalidChatID
+
+        add_chat_participant(chat_id, participant_name)
+
+    @register_cmd(CMD_GET_CHATS)
+    @login_required
+    def get_chats(self, msg):
+        """
+        get all available chats for user
+        """
+        self.send(PayloadMessage(CMD_INFO, [], self.user.chats))
+
+    @register_cmd(CMD_CHAT_MESSAGE)
+    @login_required
+    def sent_message_to_chat(self, msg):
+        """
+        Send message to all online users in chat
+        """
+        log.info('User {user} sent message {msg} to chat'.format(user=self.user, msg=msg))
+        chat_id = msg.params[0]
+        # verify to
+        chat = get_chat_by_id(chat_id)
+        if not chat:
+            raise InvalidChatID(chat)
+        users_to = [user.name for user in chat.users]
+        log.debug('Found users {users_to} for chat with id {chat_id}'.format(users_to=users_to, chat_id=chat_id))
+
+        if not users_to or self.user.name not in users_to:
+            raise InvalidChatID(chat_id)
+
+        for user_to in users_to:
+            if user_to == self.user.name:
+                continue
+            if user_to in ONLINE_USERS:
+                # send msg
+                log.info('Send MSG {msg} for chat with id {chat_id} to {usr}'.format(
+                    msg=msg.payload, chat_id=chat_id, usr=users_to))
+                ONLINE_USERS[user_to].send(PayloadMessage(msg.cmd, [chat_id, self.user.name], msg.payload))
+            else:
+                log.debug("User {} isn't online".format(user_to))
