@@ -13,8 +13,8 @@ logging_config_template = {
         'file_formatter': {
             'format': '%(asctime)s [%(levelname)7s] [%(threadName)s] [%(module)12s] %(message)s'
         },
-        'console_formater': {
-            'format': '%(levelname)s %(message)s'
+        'console_formatter': {
+            'format': '%(levelname)s [%(module)6s] %(message)s'
         },
     },
     'handlers': {
@@ -29,7 +29,7 @@ logging_config_template = {
         'debug_console_handler': {
             'class': 'logging.StreamHandler',
             'stream': 'ext://sys.stdout',
-            'formatter': 'console_formater'
+            'formatter': 'console_formatter'
         },
 
     },
