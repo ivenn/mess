@@ -1,6 +1,7 @@
 from functools import wraps
 
-from protocol.messages import CMD_LOGIN, CMD_LOGOUT, NormalMessage, Message
+from protocol.messages import CMD_LOGIN, CMD_LOGOUT, CMD_MESSAGE
+from protocol.messages import Message, NormalMessage, PayloadMessage
 from protocol.data_utils import DataParser
 from test.lib.client import TestClient
 
@@ -53,6 +54,7 @@ class TestUser:
     @connected
     def recv_msg(self, timeout=5):
         data = self.client.recv(timeout=timeout)
+        print("{user} received [{data}]".format(user=self.name, data=data))
         data = data.split(Message.TERM_SEQUENCE)[0]
         msg = self.parser.parse(data)
 
@@ -61,6 +63,10 @@ class TestUser:
     @connected
     def send_message(self, msg):
         self.client.send(msg)
+
+    @connected
+    def send(self, msg, to):
+        self.client.send(PayloadMessage(cmd=CMD_MESSAGE, params=[to, ], payload=msg))
 
     @connected
     def logout(self):

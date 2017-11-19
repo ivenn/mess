@@ -55,6 +55,72 @@ def get_user_by_name(name):
         return None
 
 
+def update_user_last_online_ts(user):
+    user.last_online_ts = datetime.datetime.utcnow()
+    s.commit()
+
+
+def create_message(to_user, from_user, data):
+    message = Message(data, by=from_user, to=to_user)
+    s.add(message)
+    s.commit()
+
+
+def get_messages(to_user, by_user=None, from_ts=None, to_ts=None):
+    if not from_ts:
+        from_ts = 0
+    if not to_ts:
+        to_ts = datetime.datetime.utcnow()
+    if to_user and by_user:
+        return s.query(Message).filter(
+            Message.to_id == to_user.id).filter(
+            Message.by_id == by_user.id).filter(
+            Message.created_ts.between(from_ts, to_ts)).all()
+    else:
+        return s.query(Message).filter(
+            Message.to_id == to_user.id).filter(
+            Message.created_ts.between(from_ts, to_ts)).all()
+
+
+def create_chat(name, chat_owner, participants=None):
+    """
+    Create chat
+    :param name: name of new chat
+    :param chat_owner: User instance of chat owner
+    :param participants: List of Users instants
+    :return: chat object
+    """
+    participants = participants if participants else []
+    chat = Chat(name, chat_owner)
+    participants.append(chat_owner)
+    chat.users = participants
+    s.add(chat)
+    s.commit()
+    return chat
+
+
+def get_chat_by_id(chat_id):
+    """
+    Find out Chat in DB by chat id
+    :param chat_id: chat id
+    :return: Chat object if or None if there is no chat this such ID
+    """
+    return s.query(Chat).filter(Chat.id == chat_id).first()
+
+
+def add_chat_participant(chat_id, participant_name):
+    """
+    Add chat participant to existent chat
+    :param chat_id: Chat object
+    :param participant_name: User name
+    :return: None
+    """
+    chat = get_chat_by_id(chat_id)
+    chat.users.append(s.query(User).filter(User.name == participant_name).first())
+    s.add(chat)
+    s.commit()
+
+
 def create_chat(name, chat_owner, participants=None):
     """
     Create chat

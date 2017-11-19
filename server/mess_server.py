@@ -74,7 +74,7 @@ class MessServer:
             else:
                 self.on_close(conn)
         except ConnectionResetError:
-            self.on_close(conn)
+            self.on_error(conn)
         except Exception as e:
             log.error(traceback.format_exc())
 
@@ -84,7 +84,10 @@ class MessServer:
         :param conn:
         :return: None
         """
-        pass
+        log.info('closing connection to {0}'.format(self.clients[conn.fileno()].addr))
+        self.unregister_client(conn)
+        self.selector.unregister(conn)
+        conn.close()
 
     def on_close(self, conn):
         """
