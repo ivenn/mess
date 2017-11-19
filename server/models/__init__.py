@@ -5,7 +5,9 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 
 
 Base = declarative_base()
-session = scoped_session(sessionmaker())
+
+# looks like works fine without scoped session
+session = sessionmaker()  # scoped_session(sessionmaker())
 
 
 from server.models.user import User

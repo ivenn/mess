@@ -54,12 +54,14 @@ NORMAL_CMDS = [CMD_LOGIN,
                CMD_CHANGE_STATUS,
                CMD_MSG_ACK,
                CMD_ADD_CHAT_PARTICIPANT,
-               CMD_GET_CHATS,]
+               CMD_GET_CHATS,
+               CMD_CREATE_CHAT
+               ]
 
 PAYLOAD_CMDS = [CMD_MESSAGE,
                 CMD_INFO,
                 CMD_CHAT_MESSAGE,
-                CMD_CREATE_CHAT]
+                ]
 
 ERROR_CMDS = [CMD_ERROR, ]
 

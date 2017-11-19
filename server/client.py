@@ -175,7 +175,8 @@ class Client(BaseClient):
         """
         Create new chat and send new chat id back to the client
         """
-        new_chat = create_chat(msg.payload, self.user)
+        chat_name = msg.params[0]
+        new_chat = create_chat(chat_name, self.user)
 
         log.info("New chat '{}' has been created".format(new_chat))
         self.send(PayloadMessage(CMD_INFO, [], str(new_chat.id)))
@@ -188,7 +189,6 @@ class Client(BaseClient):
         """
         chat_id = msg.params[0]
         participant_name = msg.params[1]
-        db_session = session()
         chat = get_chat_by_id(chat_id)
         if not chat:
             raise InvalidChatID(chat)
