@@ -14,7 +14,7 @@ class TestDataBuffer(unittest.TestCase):
         piece = b'AAA..'
 
         dlist = self.data_buffer.push(piece)
-        self.assertEqual(b'', self.data_buffer.data_buffer,
+        self.assertEqual(b'', self.data_buffer.data,
                          msg="Buffer should be empty")
         self.assertListEqual(dlist, [b'AAA', ])
 
@@ -24,10 +24,10 @@ class TestDataBuffer(unittest.TestCase):
 
         dlist = self.data_buffer.push(piece1)
         self.assertListEqual(dlist, [])
-        self.assertEqual(b'AA', self.data_buffer.data_buffer,
+        self.assertEqual(b'AA', self.data_buffer.data,
                          msg="Buffer should contains b'AA'")
         dlist = self.data_buffer.push(piece2)
-        self.assertEqual(b'', self.data_buffer.data_buffer,
+        self.assertEqual(b'', self.data_buffer.data,
                          msg="Buffer should be empty")
         self.assertListEqual(dlist, [b'AAA', ])
 
@@ -41,12 +41,12 @@ class TestDataBuffer(unittest.TestCase):
             self.assertListEqual(dlist, [])
             expected += piece
             self.assertEqual(expected,
-                             self.data_buffer.data_buffer,
+                             self.data_buffer.data,
                              msg="Buffer should contains {expected}".format(expected=expected))
 
         # push the last one
         dlist = self.data_buffer.push(pieces[-1])
-        self.assertEqual(b'', self.data_buffer.data_buffer,
+        self.assertEqual(b'', self.data_buffer.data,
                          msg="Buffer should be empty")
         self.assertListEqual(dlist, [b'AAA', ])
 
@@ -54,7 +54,7 @@ class TestDataBuffer(unittest.TestCase):
         piece = b'AAA..BBBBB..'
 
         dlist = self.data_buffer.push(piece)
-        self.assertEqual(b'', self.data_buffer.data_buffer,
+        self.assertEqual(b'', self.data_buffer.data,
                          msg="Buffer should be empty")
         self.assertListEqual(dlist, [b'AAA', b'BBBBB'])
 
@@ -62,7 +62,7 @@ class TestDataBuffer(unittest.TestCase):
         piece = b'AAA..11111..       ..$$$$$..```..'
 
         dlist = self.data_buffer.push(piece)
-        self.assertEqual(b'', self.data_buffer.data_buffer,
+        self.assertEqual(b'', self.data_buffer.data,
                          msg="Buffer should be empty")
         self.assertListEqual(dlist, [b'AAA', b'11111', b'       ', b'$$$$$', b'```'])
 
@@ -89,7 +89,7 @@ class TestDataBuffer(unittest.TestCase):
         for piece, exp in zip(pieces, expected):
             dlist = self.data_buffer.push(piece)
             self.assertEqual(exp[0],
-                             self.data_buffer.data_buffer,
+                             self.data_buffer.data,
                              msg="Buffer should contains {expected}".format(expected=exp))
             self.assertListEqual(dlist, exp[1])
 
@@ -98,7 +98,7 @@ class TestDataBuffer(unittest.TestCase):
         piece = b'\n'
         for i in range(5):
             dlist = self.data_buffer.push(piece)
-            self.assertEqual(b'', self.data_buffer.data_buffer,
+            self.assertEqual(b'', self.data_buffer.data,
                              msg="Buffer should be empty")
             self.assertListEqual(dlist, [])
 
@@ -112,7 +112,7 @@ class TestDataBuffer(unittest.TestCase):
         for piece, exp_buf, exp_mlist in pieces_and_results:
             dlist = self.data_buffer.push(piece)
             self.assertEqual(exp_buf,
-                             self.data_buffer.data_buffer,
+                             self.data_buffer.data,
                              msg="Buffer should contains {expected}".format(expected=exp_buf))
             self.assertListEqual(dlist, exp_mlist)
             self.data_buffer.flush()
