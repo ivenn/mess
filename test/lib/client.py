@@ -7,6 +7,10 @@ class TestClient:
     def __init__(self):
         self.__connected = False
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.settimeout(5)
+
+    def __repr__(self):
+        return "TestClient(sock)".format(sock=self.sock)
 
     @property
     def connected(self):

@@ -1,8 +1,8 @@
 from functools import wraps
 
-from protocol.messages import CMD_LOGIN, CMD_LOGOUT, CMD_MESSAGE
+from protocol.messages import CMD_LOGIN, CMD_LOGOUT, CMD_MESSAGE, CMD_FRIENDS
 from protocol.messages import Message, NormalMessage, PayloadMessage
-from protocol.data_utils import DataParser
+from protocol.data_utils import DataParser, DataBuffer
 from test.lib.client import TestClient
 
 
@@ -34,6 +34,9 @@ class TestUser:
         self.server_port = server_port
         self.__loggedin = False
 
+    def __repr__(self):
+        return "TestUser({name}: {client})".format(name=self.name, client=self.client)
+
     @property
     def is_connected(self):
         return self.client is not None
@@ -55,10 +58,14 @@ class TestUser:
     def recv_msg(self, timeout=5):
         data = self.client.recv(timeout=timeout)
         print("{user} received [{data}]".format(user=self.name, data=data))
-        data = data.split(Message.TERM_SEQUENCE)[0]
-        msg = self.parser.parse(data)
+        db = DataBuffer()
+        splitted = db.push(data)
+        res_msgs = []
+        for m in splitted:
+            print(m)
+            res_msgs.append(self.parser.parse(m))
 
-        return msg
+        return res_msgs if res_msgs is list else res_msgs[0]
 
     @connected
     def send_message(self, msg):
@@ -67,6 +74,11 @@ class TestUser:
     @connected
     def send(self, msg, to):
         self.client.send(PayloadMessage(cmd=CMD_MESSAGE, params=[to, ], payload=msg))
+
+    @connected
+    def get_friends(self):
+        self.client.send(NormalMessage(cmd=CMD_FRIENDS))
+        return self.recv_msg()
 
     @connected
     def logout(self):

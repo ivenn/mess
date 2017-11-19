@@ -6,6 +6,7 @@ from server.models.user import User
 from server.models.chat import Chat
 from server.models.utils import create_chat, get_chat_by_id, add_chat_participant
 from server.online import ONLINE_USERS
+from server.config import LoadTestConfig
 
 from server.base_client import BaseClient, CLIENT_OFFLINE, ClientIsAlreadyLoggedInException
 
@@ -160,7 +161,8 @@ class Client(BaseClient):
         user_to = get_user_by_name(to)
         if not user_to:
             raise NoSuchUserException(to)
-        if user_to.name not in [u.name for u in self.user.all_friends]:
+        if (user_to.name not in [u.name for u in self.user.all_friends] and
+           not isinstance(self.server.config, LoadTestConfig)):
             raise NoSuchFriendException(to)
 
         # save msg to db

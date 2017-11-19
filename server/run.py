@@ -4,11 +4,19 @@ from server.mess_server import MessServer
 from server.models import session, init_db
 from server.models.chat import Chat
 from server.models.utils import create_users, create_chat
-from server.config import Config, TestConfig
+from server.config import Config, TestConfig, LoadTestConfig 
 from server.config.log import configure_logging
 
 
 RUN_MODE_TEST = 'test'
+RUN_MODE_LOAD = 'load'
+
+
+def fill_db_load():
+    users_to_create = [('user%s' % i, 'pass%s' % i) for i in range(100)]
+    users = create_users(users_to_create)
+    s = session()
+    s.commit()
 
 
 def fill_db():
@@ -38,6 +46,8 @@ def fill_db():
 def main(mode=None, create_config=False):
     if mode == RUN_MODE_TEST:
         config = TestConfig()
+    elif mode == RUN_MODE_LOAD:
+        config = LoadTestConfig()
     else:
         config = Config()
 
@@ -49,9 +59,12 @@ def main(mode=None, create_config=False):
 
     if mode != RUN_MODE_TEST and create_config:
         print("Creating configuration...")
-        fill_db()
+        if RUN_MODE_LOAD:
+            fill_db_load()
+        else:
+            fill_db()
 
-    MessServer().run()
+    MessServer(config=config).run()
 
 
 if __name__ == '__main__':
@@ -66,6 +79,7 @@ if __name__ == '__main__':
                       dest="config",
                       default=False,
                       help="create basic configuration")
+
     (options, args) = parser.parse_args()
 
     main(mode=options.mode, create_config=options.config)

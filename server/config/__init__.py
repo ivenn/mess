@@ -21,3 +21,12 @@ class TestConfig:
         self.log = os.path.join(PROJECT_PATH, 'test', 'log')
         self.db_path = os.path.join(PROJECT_PATH, 'test', 'mess.db')
         self.db = 'sqlite:///{db_path}'.format(db_path=self.db_path)
+
+
+class LoadTestConfig:
+
+    def __init__(self):
+        self.project_path = PROJECT_PATH
+        self.log = os.path.join(PROJECT_PATH, 'test', 'log')
+        self.db_path = os.path.join(PROJECT_PATH, 'test', 'load_mess.db')
+        self.db = 'sqlite:///{db_path}'.format(db_path=self.db_path)

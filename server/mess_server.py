@@ -4,6 +4,7 @@ import traceback
 import logging
 import sys
 
+from server.config import Config
 from server.client import Client
 from protocol.messages import ErrorMessage
 
@@ -13,9 +14,10 @@ log = logging.getLogger(__name__)
 
 class MessServer:
 
-    def __init__(self, port=9090):
+    def __init__(self, port=9090, config=None):
         self.host = '127.0.0.1'
         self.port = port
+        self.config = config if config else Config
         self.clients = {}  # dict {socket: <Client> instance}
         self.socket = None
         self._running = False
