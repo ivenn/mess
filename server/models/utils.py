@@ -119,6 +119,8 @@ def add_chat_participant(chat_id, participant_name):
     chat.users.append(s.query(User).filter(User.name == participant_name).first())
     s.add(chat)
     s.commit()
+
+
 def create_chat(name, chat_owner, participants=None):
     """
     Create chat
