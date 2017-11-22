@@ -63,7 +63,7 @@ class TestFunctional(unittest.TestCase):
             user.logout()
             user.disconnect()
 
-    def _test_send_chat_message(self):
+    def test_send_chat_message(self):
         print("== Test send chat message test")
         self.user4 = self.getLoggedInUser(self.name_pass4)
         self.user3 = self.getLoggedInUser(self.name_pass3)
@@ -121,7 +121,7 @@ class TestFunctional(unittest.TestCase):
 
         self.disconnect_users([self.user4, self.user3, self.user1])
 
-    def _test_create_new_chat(self):
+    def test_create_new_chat(self):
         print("== Create new chat test")
         self.user2 = self.getLoggedInUser(self.name_pass2)
         time.sleep(2)
