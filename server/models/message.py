@@ -22,12 +22,16 @@ class ChatMessage(Base):
     data = Column(Text, nullable=False)
 
     chat_id = Column(Integer, ForeignKey('chat.id'))
+    chat = relationship('Chat', foreign_keys=[chat_id])
+
     sent_by = Column(Integer, ForeignKey('user.id'))
+    by = relationship('User', foreign_keys=[sent_by, ])
+
 
     def __init__(self, data, chat, sent_by):
         self.data = data
         self.chat = chat
-        self.sent_by = sent_by
+        self.by = sent_by
 
     def __repr__(self):
         return "ChatMessage(id={id}, ts={ts}, data={data}, chat={chat}, sent_by={sent_by})".format(

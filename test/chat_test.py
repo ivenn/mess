@@ -1,6 +1,7 @@
 import unittest
 import time
 import re
+import os
 
 from test.lib.user import TestUser
 from test.lib.test_server import TestServer
@@ -17,6 +18,13 @@ log = getLogger("chat_test")
 
 
 class TestFunctional(unittest.TestCase):
+    @classmethod
+    def tearDownClass(cls):
+        print("Deleting sqlite db file...")
+        try:
+            os.remove(cls.server.config.db_path)
+        except OSError:
+            pass
 
     @classmethod
     def setUpClass(cls):
@@ -55,7 +63,7 @@ class TestFunctional(unittest.TestCase):
             user.logout()
             user.disconnect()
 
-    def test_send_chat_message(self):
+    def _test_send_chat_message(self):
         print("== Test send chat message test")
         self.user4 = self.getLoggedInUser(self.name_pass4)
         self.user3 = self.getLoggedInUser(self.name_pass3)
@@ -77,7 +85,43 @@ class TestFunctional(unittest.TestCase):
 
         self.disconnect_users([self.user4, self.user3, self.user1])
 
-    def test_create_new_chat(self):
+    def test_chat_offline_message(self):
+        print("== Test offline chat messages")
+        firs_offline_message = "first offline message"
+        second_offline_message = "second offline message"
+        self.user4 = self.getLoggedInUser(self.name_pass4)
+        time.sleep(2)
+        print("Send first message")
+
+        self.user4.send_message(
+            "{cmd} {chat_id} {payload_size}||{msg}..".format(cmd=CMD_CHAT_MESSAGE,
+                                                             chat_id=self.base_chat.id,
+                                                             payload_size=len(firs_offline_message),
+                                                             msg=firs_offline_message))
+        print("Login new user and check message")
+        self.user3 = self.getLoggedInUser(self.name_pass3)
+        first_msg_usr3 = self.user3.recv_msg()
+        self.assertEqual(firs_offline_message, first_msg_usr3.payload, "User should receive offline message")
+
+        self.user4.send_message(
+            "{cmd} {chat_id} {payload_size}||{msg}..".format(cmd=CMD_CHAT_MESSAGE,
+                                                             chat_id=self.base_chat.id,
+                                                             payload_size=len(second_offline_message),
+                                                             msg=second_offline_message))
+
+        second_msg_usr3 = self.user3.recv_msg()
+        self.assertEqual(second_offline_message, second_msg_usr3.payload, "User online and should receive new message")
+
+        self.user1 = self.getLoggedInUser(self.name_pass1)
+        first_msg_usr1 = self.user1.recv_msg()
+        second_msg_usr1 = self.user1.recv_msg()
+        self.assertEqual(firs_offline_message, first_msg_usr1.payload,
+                         "User logged in and should receive all offline messages")
+        self.assertEqual(second_offline_message, second_msg_usr1.payload, "User should receive offline message")
+
+        self.disconnect_users([self.user4, self.user3, self.user1])
+
+    def _test_create_new_chat(self):
         print("== Create new chat test")
         self.user2 = self.getLoggedInUser(self.name_pass2)
         time.sleep(2)

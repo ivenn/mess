@@ -1,10 +1,7 @@
 import logging
 from functools import wraps
 
-from server.models import session
-from server.models.user import User
-from server.models.chat import Chat
-from server.models.utils import create_chat, get_chat_by_id, add_chat_participant
+from server.models.utils import create_chat, get_chat_by_id, add_chat_participant, create_chat_message
 from server.online import ONLINE_USERS
 
 from server.base_client import BaseClient, CLIENT_OFFLINE, ClientIsAlreadyLoggedInException
@@ -13,7 +10,8 @@ from protocol.messages import CMD_INFO, CMD_LOGIN, CMD_LOGOUT, CMD_FRIENDS, CMD_
     CMD_GET_CHATS, CMD_ADD_CHAT_PARTICIPANT, CMD_CREATE_CHAT
 from protocol.messages import PayloadMessage
 
-from server.models.utils import update_user_last_online_ts, create_message, get_messages, get_user_by_name
+from server.models.utils import update_user_last_online_ts, create_message, get_messages, get_user_by_name,\
+    get_chat_messages
 
 
 log = logging.getLogger(__name__)
@@ -122,6 +120,14 @@ class Client(BaseClient):
                 messages = get_messages(self.user, from_ts=self.user.last_online_ts)
                 for m in messages:
                     self.send(PayloadMessage(CMD_MESSAGE, [m.by.name], m.data))
+
+                log.info("{user} have next chats: {chats}".format(user=user, chats=self.user.chats))
+                for chat in self.user.chats:
+                    log.info("{user} tried to get offline messages from chat {chat}".format(user=user, chat=chat))
+                    chat_messages = get_chat_messages(chat_id=chat.id, from_ts=self.user.last_online_ts)
+                    log.info("Next messages was found: {}".format(chat_messages))
+                    for msg in chat_messages:
+                        self.send(PayloadMessage(CMD_CHAT_MESSAGE, [str(msg.chat_id), msg.by.name], msg.data))
                 update_user_last_online_ts(self.user)
         else:
             raise InvalidUserCredentials()
@@ -222,6 +228,8 @@ class Client(BaseClient):
 
         if not users_to or self.user.name not in users_to:
             raise InvalidChatID(chat_id)
+
+        create_chat_message(chat, self.user, msg.payload)
 
         for user_to in users_to:
             if user_to == self.user.name:
