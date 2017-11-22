@@ -121,11 +121,11 @@ class Client(BaseClient):
                 for m in messages:
                     self.send(PayloadMessage(CMD_MESSAGE, [m.by.name], m.data))
 
-                log.info("{user} have next chats: {chats}".format(user=user, chats=self.user.chats))
+                log.debug("{user} have next chats: {chats}".format(user=user, chats=self.user.chats))
                 for chat in self.user.chats:
-                    log.info("{user} tried to get offline messages from chat {chat}".format(user=user, chat=chat))
+                    log.debug("{user} tried to get offline messages from chat {chat}".format(user=user, chat=chat))
                     chat_messages = get_chat_messages(chat_id=chat.id, from_ts=self.user.last_online_ts)
-                    log.info("Next messages was found: {}".format(chat_messages))
+                    log.debug("Next messages was found: {}".format(chat_messages))
                     for msg in chat_messages:
                         self.send(PayloadMessage(CMD_CHAT_MESSAGE, [str(msg.chat_id), msg.by.name], msg.data))
                 update_user_last_online_ts(self.user)
