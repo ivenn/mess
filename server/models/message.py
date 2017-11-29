@@ -33,8 +33,8 @@ class ChatMessage(Base):
         self.by = by
 
     def __repr__(self):
-        return "ChatMessage(id={id}, ts={ts}, data={data}, chat={chat}, sent_by={sent_by})".format(
-            id=self.id, ts=self.created_ts, data=self.data, chat=self.chat, sent_by=self.sent_by)
+        return "ChatMessage(id={id}, ts={ts}, data={data}, chat={chat}, by={by})".format(
+            id=self.id, ts=self.created_ts, data=self.data, chat=self.chat, by=self.by)
 
 
 class Message(Base):
