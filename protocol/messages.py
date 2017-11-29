@@ -168,7 +168,7 @@ class PayloadMessage(Message):
     def as_bytes(self):
         msg_template = "{cmd} {params} {payload_size}{split_seq}{payload}{term_seq}\n"
         msg = msg_template.format(cmd=self.cmd,
-                                  params=' '.join(self.params),
+                                  params=' '.join(str(param) for param in self.params),
                                   payload_size=len(self.payload),
                                   split_seq=self.SPLIT_SEQUENCE_STR,
                                   payload=self.payload,

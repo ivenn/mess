@@ -83,7 +83,7 @@ def get_messages(to_user, by_user=None, from_ts=None, to_ts=None):
 
 
 def create_chat_message(to_chat, from_user, data):
-    message = ChatMessage(data, chat=to_chat, sent_by=from_user)
+    message = ChatMessage(data, chat=to_chat, by=from_user)
     s.add(message)
     s.commit()
 
