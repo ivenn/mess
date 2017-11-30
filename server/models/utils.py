@@ -3,7 +3,7 @@ import datetime
 from server.models import session
 from server.models.user import User
 from server.models.chat import Chat
-from server.models.message import Message
+from server.models.message import Message, ChatMessage
 
 
 s = session()
@@ -80,6 +80,22 @@ def get_messages(to_user, by_user=None, from_ts=None, to_ts=None):
         return s.query(Message).filter(
             Message.to_id == to_user.id).filter(
             Message.created_ts.between(from_ts, to_ts)).all()
+
+
+def create_chat_message(to_chat, from_user, data):
+    message = ChatMessage(data, chat=to_chat, by=from_user)
+    s.add(message)
+    s.commit()
+
+
+def get_chat_messages(chat_id, from_ts=None, to_ts=None):
+    if not from_ts:
+        from_ts = 0
+    if not to_ts:
+        to_ts = datetime.datetime.utcnow()
+    return s.query(ChatMessage).filter(
+        ChatMessage.chat_id == chat_id).filter(
+        ChatMessage.created_ts.between(from_ts, to_ts)).all()
 
 
 def create_chat(name, chat_owner, participants=None):
